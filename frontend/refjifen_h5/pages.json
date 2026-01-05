@@ -1,0 +1,66 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": { "navigationBarTitleText": "RefJifen Home" }
+		},
+		{
+			"path": "pages/mall/mall",
+			"style": { "navigationBarTitleText": "Mall" }
+		},
+		{
+			"path": "pages/team/tree",
+			"style": { "navigationBarTitleText": "My Team" }
+		},
+		{
+			"path": "pages/my/my",
+			"style": { "navigationBarTitleText": "My Profile" }
+		},
+		{
+			"path": "pages/login/login",
+			"style": { "navigationBarTitleText": "Login" }
+		},
+		{
+			"path": "pages/login/register",
+			"style": { "navigationBarTitleText": "Register" }
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "RefJifen",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"tabBar": {
+		"color": "#7A7E83",
+		"selectedColor": "#007AFF",
+		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "Home",
+				"iconPath": "static/home.png",
+				"selectedIconPath": "static/home_active.png"
+			},
+			{
+				"pagePath": "pages/mall/mall",
+				"text": "Mall",
+				"iconPath": "static/mall.png",
+				"selectedIconPath": "static/mall_active.png"
+			},
+			{
+				"pagePath": "pages/team/tree",
+				"text": "Team",
+				"iconPath": "static/team.png",
+				"selectedIconPath": "static/team_active.png"
+			},
+			{
+				"pagePath": "pages/my/my",
+				"text": "Profile",
+				"iconPath": "static/my.png",
+				"selectedIconPath": "static/my_active.png"
+			}
+		]
+	}
+}
