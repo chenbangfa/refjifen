@@ -227,7 +227,6 @@ CREATE TABLE `users` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User Accounts (Dual Structure)';
 
-ALTER TABLE `users` ADD `is_frozen` tinyint(1) DEFAULT '0' COMMENT '1=Frozen, 0=Normal';
 -- --------------------------------------------------------
 
 --

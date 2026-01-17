@@ -27,7 +27,7 @@ function getNode($db, $uid)
 {
     if (!$uid)
         return null;
-    $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total, p.personal_performance 
+    $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total 
             FROM users u 
             LEFT JOIN performance p ON u.id = p.user_id 
             WHERE u.id = ?";
