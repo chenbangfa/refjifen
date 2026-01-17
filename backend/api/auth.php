@@ -61,18 +61,28 @@ if ($action == 'register') {
             break;
     }
 
-    // Auto-assign position logic
-    // Default is Left
-    $position = 'L';
-    $parent_id = $sponsor_id; // Default placement under sponsor
-
-    // Check if Parent already has a Left child
-    if ($parent_id > 0) {
+    // Check Placement Availability
+    if ($sponsor_id > 0) {
+        // Check Left
         $stmt = $db->prepare("SELECT id FROM users WHERE parent_id = ? AND position = 'L'");
-        $stmt->execute([$parent_id]);
-        if ($stmt->rowCount() > 0) {
-            // Left is occupied, place in Right
+        $stmt->execute([$sponsor_id]);
+        $hasForcedLeft = ($stmt->rowCount() > 0);
+
+        // Check Right
+        $stmt = $db->prepare("SELECT id FROM users WHERE parent_id = ? AND position = 'R'");
+        $stmt->execute([$sponsor_id]);
+        $hasForcedRight = ($stmt->rowCount() > 0);
+
+        if (!$hasForcedLeft) {
+            $parent_id = $sponsor_id;
+            $position = 'L';
+        } elseif (!$hasForcedRight) {
+            $parent_id = $sponsor_id;
             $position = 'R';
+        } else {
+            // Both Full -> Pending placement
+            $parent_id = 0;
+            $position = null;
         }
     }
 
