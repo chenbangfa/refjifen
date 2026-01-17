@@ -202,7 +202,8 @@ if ($action == 'categories') {
                 ->execute([$user_id, -$total_price_B, $before, $after]);
         }
 
-        // 2. Process Points Addition & Log
+        // 2. Process Points Addition & Log - CHANGED: Deferred to Next Day
+        /*
         if ($total_points_A > 0) {
             $before = $assets['traffic_points'];
             $after = $before + $total_points_A;
@@ -212,6 +213,7 @@ if ($action == 'categories') {
             $db->prepare("INSERT INTO logs_finance (user_id, type, asset_type, amount, before_val, after_val, memo) VALUES (?, 'release', 'traffic_points', ?, ?, ?, '购物赠送流量分')")
                 ->execute([$user_id, $total_points_A, $before, $after]);
         }
+        */
 
         // 3. Level Up & Bubble Up (Zone A)
         if ($total_amount_A > 0) {
@@ -248,6 +250,8 @@ if ($action == 'categories') {
         }
 
         // 4. Update Stock/Sales & Create Order Rows
+        $settle_date = date('Y-m-d', strtotime('+1 day')); // Next Day Settle
+
         foreach ($data->items as $item) {
             $pid = $item->id;
             $qty = intval($item->qty);
@@ -264,10 +268,15 @@ if ($action == 'categories') {
             // Update Stock
             $db->prepare("UPDATE products SET sales = sales + ?, stock = stock - ? WHERE id = ?")->execute([$qty, $qty, $pid]);
 
-            // Insert Order
-            // Added pay_time = NOW()
-            $stmt = $db->prepare("INSERT INTO orders (order_sn, user_id, product_id, amount, quantity, zone, status, pay_time, receiver_info, remark) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?)");
-            $stmt->execute([$order_sn, $user_id, $pid, $line_total, $qty, $product['zone'], $receiver_info, $remark]);
+            // Calculate Item Pending Points (Zone A Only)
+            $item_pending = 0;
+            if ($product['zone'] == 'A' && isset($ratio)) {
+                $item_pending = $line_total * $ratio;
+            }
+
+            // Insert Order with Pending Points
+            $stmt = $db->prepare("INSERT INTO orders (order_sn, user_id, product_id, amount, quantity, zone, status, pay_time, receiver_info, remark, points_status, settle_date, pending_points) VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?, 0, ?, ?)");
+            $stmt->execute([$order_sn, $user_id, $pid, $line_total, $qty, $product['zone'], $receiver_info, $remark, $settle_date, $item_pending]);
         }
 
         $db->commit();

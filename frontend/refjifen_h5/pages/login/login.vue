@@ -99,7 +99,7 @@
 
     .form-card { background: #fff; border-radius: 16px; padding: 40px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
     
-    .input-item { display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 10px 0; margin-bottom: 25px; transition: 0.3s; }
+    .input-item { display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; transition: 0.3s; }
     .input-item:focus-within { border-bottom-color: #07C160; }
     
     .icon-box { margin-right: 15px; display: flex; align-items: center; opacity: 0.6; }

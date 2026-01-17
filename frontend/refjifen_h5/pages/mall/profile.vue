@@ -267,5 +267,5 @@
     .menu-icon { font-size: 20px; margin-right: 10px; }
     
     .badge-num { position: absolute; top: -5px; right: 15px; background: #ff4d4f; color: #fff; font-size: 10px; padding: 0 4px; border-radius: 10px; min-width: 14px; text-align: center; line-height: 14px; height: 14px; }
-    .switch-link { text-align: center; margin-top: 30px; margin-bottom: 30px; color: #576b95; font-size: 14px; }
+    .switch-link { text-align: center; margin-top: 30px; margin-bottom: 30px; color: #fff; font-size: 14px; }
 </style>

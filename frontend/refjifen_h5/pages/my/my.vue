@@ -398,7 +398,7 @@
     
     .recharge-info { text-align: left; margin: 10px 0; color: #555; font-size: 14px; line-height: 1.8; }
     .contact-info { color: #888; font-size: 12px; }
-    .switch-link { text-align: center; margin-top: 30px; margin-bottom: 30px; color: #576b95; font-size: 14px; }
+    .switch-link { text-align: center; margin-top: 30px; margin-bottom: 30px; color: #fff; font-size: 14px; }
 </style>
 
 <style>
