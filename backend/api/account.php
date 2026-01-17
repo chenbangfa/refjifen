@@ -289,7 +289,7 @@ if ($action == 'info') {
         return $node;
     }
 
-    $tree = buildTree($db, $target_id, 0, 2);
+    $tree = buildTree($db, $target_id, 0, 1);
 
     echo json_encode([
         "code" => 200,

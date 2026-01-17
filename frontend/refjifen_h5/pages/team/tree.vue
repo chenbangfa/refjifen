@@ -2,7 +2,7 @@
 	<view class="container">
         <!-- Top Controls -->
         <view class="top-controls">
-            <view class="ctrl-btn back-parent" v-if="team.id && team.parent_id && team.parent_id != 0" @click="loadTeam(team.parent_id)">返回上级</view>
+            <view class="ctrl-btn back-parent" v-if="team.id && team.parent_id > 0" @click="loadTeam(team.parent_id)">返回上级</view>
             <view class="ctrl-btn back-top" v-if="team.id && team.id != myUserId" @click="loadTeam(myUserId)">返回顶部</view>
         </view>
 
