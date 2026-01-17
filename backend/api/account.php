@@ -227,12 +227,11 @@ if ($action == 'info') {
     }
 
 } elseif ($action == 'team') {
-    // Return direct children (Binary Tree)
+    // Return Recursive Tree
     // Supports Drill-down via ?id=xxx
-
     $target_id = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : $user_id;
 
-    // Security: Verify target_id is descendant of user_id (or self)
+    // Security check (same as before)
     if ($target_id != $user_id) {
         $curr = $target_id;
         $is_descendant = false;
@@ -249,35 +248,52 @@ if ($action == 'info') {
             $safety++;
         }
         if (!$is_descendant) {
-            echo json_encode(["message" => "Access Denied: Not your team member", "code" => 403]);
+            echo json_encode(["message" => "Access Denied", "code" => 403]);
             exit;
         }
     }
 
-    $root = getNode($db, $target_id);
+    // Recursive Function
+    function buildTree($db, $rootId, $depth = 0, $maxDepth = 10)
+    {
+        if ($depth > $maxDepth)
+            return null;
 
-    // Get Children
-    $stmt = $db->prepare("SELECT id, position FROM users WHERE parent_id = ?");
-    $stmt->execute([$target_id]);
-    $children = $stmt->fetchAll();
+        $node = getNode($db, $rootId);
+        if (!$node)
+            return null;
 
-    $left = null;
-    $right = null;
+        $node['children'] = [];
 
-    foreach ($children as $child) {
-        if ($child['position'] == 'L')
-            $left = getNode($db, $child['id']);
-        if ($child['position'] == 'R')
-            $right = getNode($db, $child['id']);
+        // Fetch children
+        $stmt = $db->prepare("SELECT id, position FROM users WHERE parent_id = ? ORDER BY position ASC");
+        $stmt->execute([$rootId]);
+        $children = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $hasChildren = false;
+        foreach ($children as $child) {
+            $childNode = buildTree($db, $child['id'], $depth + 1, $maxDepth);
+            if ($childNode) {
+                // Ensure specific keys for Left/Right if needed, but for general tree generic children is fine.
+                // However, binary tree usually needs strict L/R slots.
+                // Let's attach them to 'children' generic array but keep 'position' data.
+                $node['children'][] = $childNode;
+                $hasChildren = true;
+            }
+        }
+
+        // If it's a binary tree visualization, we might want to ensure we pass "null" for missing slots?
+        // Or just let frontend handle it based on 'position'.
+        // Let's pass what we have.
+
+        return $node;
     }
+
+    $tree = buildTree($db, $target_id, 0, 10);
 
     echo json_encode([
         "code" => 200,
-        "data" => [
-            "root" => $root,
-            "left" => $left,
-            "right" => $right
-        ]
+        "data" => $tree
     ]);
 
 } else {
