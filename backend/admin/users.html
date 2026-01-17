@@ -86,12 +86,20 @@
                                 <template #default="scope">
                                     <div style="margin-bottom:4px;">
                                         <span style="color:#999;font-size:12px;">推荐: </span>
-                                        <span v-if="scope.row.sponsor_mobile">{{ scope.row.sponsor_nickname }}</span>
+                                        <span v-if="scope.row.sponsor_mobile">
+                                            {{ scope.row.sponsor_nickname }}
+                                            <span style="color:#666;font-size:12px;">(ID:{{ scope.row.sponsor_id
+                                                }})</span>
+                                        </span>
                                         <span v-else>-</span>
                                     </div>
                                     <div>
                                         <span style="color:#999;font-size:12px;">安置: </span>
-                                        <span v-if="scope.row.parent_mobile">{{ scope.row.parent_nickname }}</span>
+                                        <span v-if="scope.row.parent_mobile">
+                                            {{ scope.row.parent_nickname }}
+                                            <span style="color:#666;font-size:12px;">(ID:{{ scope.row.parent_id
+                                                }})</span>
+                                        </span>
                                         <span v-else>-</span>
                                     </div>
                                 </template>

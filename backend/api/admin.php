@@ -68,7 +68,7 @@ if ($action == 'users') {
     // List
     // List
     // List
-    $sql = "SELECT u.id, u.mobile, u.nickname, u.invite_code, u.level, u.created_at, u.parent_id, u.position, u.is_frozen,
+    $sql = "SELECT u.id, u.mobile, u.nickname, u.invite_code, u.level, u.created_at, u.parent_id, u.sponsor_id, u.position, u.is_frozen,
                    a.balance, a.traffic_points, a.vouchers,
                    p.mobile as parent_mobile, p.nickname as parent_nickname,
                    s.mobile as sponsor_mobile, s.nickname as sponsor_nickname,
