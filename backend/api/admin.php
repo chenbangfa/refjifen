@@ -71,6 +71,7 @@ if ($action == 'users') {
     $sql = "SELECT u.id, u.mobile, u.nickname, u.invite_code, u.level, u.created_at, u.parent_id, u.position, u.is_frozen,
                    a.balance, a.traffic_points, a.vouchers,
                    p.mobile as parent_mobile, p.nickname as parent_nickname,
+                   s.mobile as sponsor_mobile, s.nickname as sponsor_nickname,
                    perf.left_total, perf.right_total,
                    (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'L') as left_directs,
                    (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'R') as right_directs,
@@ -78,6 +79,7 @@ if ($action == 'users') {
             FROM users u 
             LEFT JOIN assets a ON u.id = a.user_id 
             LEFT JOIN users p ON u.parent_id = p.id
+            LEFT JOIN users s ON u.sponsor_id = s.id
             LEFT JOIN performance perf ON u.id = perf.user_id
             $where ORDER BY u.id DESC LIMIT $limit OFFSET $offset";
     $stmt = $db->prepare($sql);
