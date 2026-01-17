@@ -58,8 +58,15 @@ if ($action == 'checkin') {
     }
 
     // 3. Dynamic Logic
-    // Base Release (Level Based) - Only Level 2 (Gold) and 3 (Diamond)
-    $base_release = ($user['level'] >= 2) ? 80 : 0;
+    // Base Release (Level Based)
+    // Gold (2) = 8, Diamond (3) = 80
+    if ($user['level'] >= 3) {
+        $base_release = 80;
+    } elseif ($user['level'] == 2) {
+        $base_release = 8;
+    } else {
+        $base_release = 0;
+    }
 
     // Performance Release (DB Rules)
     $stmt = $db->prepare("SELECT * FROM acceleration_rules ORDER BY min_performance DESC");
