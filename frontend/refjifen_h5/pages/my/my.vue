@@ -334,7 +334,7 @@
         align-items: center;
         justify-content: center;
     }
-    .avatar { width: 60px; height: 60px; border-radius: 50%; background: #eee; display: block; }
+    .avatar { width: 100%; height: 100%; border-radius: 50%; background: #eee; display: block; object-fit: cover; }
     
     .nickname { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #004D40; letter-spacing: 0.5px; }
     .uid { font-size: 13px; color: #006064; display: flex; align-items: center; opacity: 0.8; }
