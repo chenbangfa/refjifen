@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赠送规则管理 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="reward_rules"></side-menu>
+        <div class="content">
+            <layout-header title="赠送规则管理"></layout-header>
+
+            <div class="page-container">
+                <el-alert title="说明：系统将根据订单中A区商品的总金额，自动匹配满足条件的最高档位规则进行流量分赠送。" type="info" show-icon
+                    style="margin-bottom:20px;"></el-alert>
+
+                <div style="margin-bottom:15px;">
+                    <el-button type="primary" @click="openModal()">+ 添加规则</el-button>
+                </div>
+
+                <el-table :data="list" border stripe v-loading="loading">
+                    <el-table-column prop="min_amount" label="最低消费金额 (≥)">
+                        <template #default="scope">¥{{ parseFloat(scope.row.min_amount).toFixed(2) }}</template>
+                    </el-table-column>
+                    <el-table-column prop="ratio" label="赠送倍数">
+                        <template #default="scope">{{ parseFloat(scope.row.ratio) }} 倍</template>
+                    </el-table-column>
+                    <el-table-column label="示例">
+                        <template #default="scope">
+                            消费 ¥1000 赠送 {{ (1000 * parseFloat(scope.row.ratio)).toFixed(2) }} 分
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="150">
+                        <template #default="scope">
+                            <el-button size="small" type="primary" @click="openModal(scope.row)">编辑</el-button>
+                            <el-popconfirm title="确定删除吗？" @confirm="handleDelete(scope.row)">
+                                <template #reference>
+                                    <el-button size="small" type="danger">删除</el-button>
+                                </template>
+                            </el-popconfirm>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+
+            <!-- Modal -->
+            <el-dialog v-model="showModal" :title="form.id ? '编辑规则' : '添加规则'" width="500px">
+                <el-form :model="form" label-width="120px">
+                    <el-form-item label="最低消费金额">
+                        <el-input v-model="form.min_amount" type="number" step="0.01"></el-input>
+                    </el-form-item>
+                    <el-form-item label="赠送倍数">
+                        <el-input v-model="form.ratio" type="number" step="0.1"></el-input>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="showModal = false">取消</el-button>
+                    <el-button type="primary" @click="save">保存</el-button>
+                </template>
+            </el-dialog>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const list = ref([]);
+                const loading = ref(false);
+                const showModal = ref(false);
+                const form = reactive({ id: null, min_amount: '', ratio: '' });
+
+                const fetchData = async () => {
+                    loading.value = true;
+                    // Use window.req 
+                    const res = await window.req('reward_rules', {}, 'GET');
+                    loading.value = false;
+                    if (res) list.value = res.data;
+                };
+
+                const openModal = (row = null) => {
+                    if (row) {
+                        Object.assign(form, row);
+                    } else {
+                        Object.assign(form, { id: null, min_amount: '', ratio: '' });
+                    }
+                    showModal.value = true;
+                };
+
+                const save = async () => {
+                    if (!form.min_amount || !form.ratio) return ElementPlus.ElMessage.warning('请填写完整');
+                    await window.req('save_reward_rule', form);
+                    showModal.value = false;
+                    ElementPlus.ElMessage.success('保存成功');
+                    fetchData();
+                };
+
+                const handleDelete = async (row) => {
+                    await window.req(`delete_reward_rule`, { id: row.id });
+                    ElementPlus.ElMessage.success('已删除');
+                    fetchData();
+                };
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchData();
+                });
+
+                return {
+                    list, loading, showModal, form,
+                    fetchData, openModal, save, handleDelete
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

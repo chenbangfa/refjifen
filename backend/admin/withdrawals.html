@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>提现审核 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        /* Force table borders */
+        .el-table--border .el-table__inner-wrapper::after,
+        .el-table--border::after,
+        .el-table--border::before,
+        .el-table__inner-wrapper::before {
+            background-color: #dcdfe6;
+        }
+
+        .el-table__border-left-patch {
+            background-color: #dcdfe6;
+        }
+
+        .el-table--border .el-table__cell {
+            border-right: 1px solid #dcdfe6;
+        }
+
+        .el-table th.el-table__cell {
+            background-color: #f5f7fa;
+            color: #606266;
+            font-weight: bold;
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="withdrawals"></side-menu>
+        <div class="content">
+            <layout-header title="提现审核"></layout-header>
+
+            <div class="page-container">
+                <el-radio-group v-model="status" style="margin-bottom: 15px;" @change="fetchData">
+                    <el-radio-button label="">全部</el-radio-button>
+                    <el-radio-button :label="0">待审核</el-radio-button>
+                    <el-radio-button :label="1">已通过</el-radio-button>
+                    <el-radio-button :label="2">已驳回</el-radio-button>
+                </el-radio-group>
+
+                <el-table :data="list" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="nickname" label="申请人"></el-table-column>
+                    <el-table-column prop="amount" label="金额"></el-table-column>
+                    <el-table-column prop="method" label="方式">
+                        <template #default="scope">{{ methodMap[scope.row.method] || scope.row.method }}</template>
+                    </el-table-column>
+                    <el-table-column prop="details" label="详情" width="300">
+                        <template #default="scope">
+                            <div v-for="(val, key) in parseJSON(scope.row.details)" :key="key"
+                                style="font-size:12px; line-height:1.6;">
+                                <div v-if="['image', 'image_url'].includes(key)">
+                                    <span style="color:#999;">{{ formatKey(key) }}: </span>
+                                    <el-image
+                                        style="width: 30px; height: 30px; vertical-align: middle; border-radius:4px; cursor:pointer;"
+                                        :src="val" :preview-src-list="[val]" :initial-index="0" fit="cover"
+                                        preview-teleported>
+                                    </el-image>
+                                </div>
+                                <div v-else-if="shouldShow(scope.row.method, key, val)">
+                                    <span style="color:#999;">{{ formatKey(key) }}: </span>
+                                    <span style="color:#333;">{{ val }}</span>
+                                </div>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.status==0" type="warning">待审核</el-tag>
+                            <el-tag v-else-if="scope.row.status==1" type="success">已通过</el-tag>
+                            <el-tag v-else type="danger">已驳回</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="admin_note" label="备注/凭证">
+                        <template #default="scope">
+                            <div v-if="scope.row.admin_note">{{ scope.row.admin_note }}</div>
+                            <div v-if="scope.row.proof_image">
+                                <a :href="scope.row.proof_image" target="_blank"
+                                    style="color:#409EFF;font-size:12px;">查看凭证</a>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="180">
+                        <template #default="scope">
+                            <div v-if="scope.row.status == 0">
+                                <el-button size="small" type="success" @click="openAudit(scope.row, 1)">通过</el-button>
+                                <el-button size="small" type="danger" @click="openAudit(scope.row, 2)">驳回</el-button>
+                            </div>
+                            <span v-else>-</span>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- Pagination -->
+                <div style="margin-top: 30px; text-align: center;">
+                    <el-pagination background layout="prev, pager, next" :total="total" :page-size="limit"
+                        @current-change="handlePageChange"></el-pagination>
+                </div>
+            </div>
+
+            <!-- 审核弹窗 -->
+            <el-dialog v-model="auditVisible" :title="auditForm.status==1 ? '审核通过' : '审核驳回'" width="500px">
+                <el-form label-width="100px">
+
+                    <!-- 通过：上传凭证 -->
+                    <template v-if="auditForm.status == 1">
+                        <el-form-item label="支付凭证">
+                            <div style="display:flex;align-items:center;">
+                                <el-input v-model="auditForm.proof_image" placeholder="图片链接"
+                                    style="flex:1;margin-right:10px;"></el-input>
+                                <el-upload :action="uploadUrl" :show-file-list="false" :on-success="handleUploadSuccess"
+                                    :before-upload="beforeUpload">
+                                    <el-button type="primary">上传图片</el-button>
+                                </el-upload>
+                            </div>
+                            <div v-if="auditForm.proof_image" style="margin-top:10px;">
+                                <img :src="auditForm.proof_image"
+                                    style="max-width:100px;max-height:100px;border-radius:4px;">
+                            </div>
+                        </el-form-item>
+                        <el-form-item label="备注信息">
+                            <el-input v-model="auditForm.admin_note" placeholder="可选备注"></el-input>
+                        </el-form-item>
+                    </template>
+
+                    <!-- 驳回：填写理由 -->
+                    <template v-else>
+                        <el-form-item label="驳回理由">
+                            <el-input type="textarea" v-model="auditForm.admin_note" placeholder="请输入驳回理由"
+                                rows="3"></el-input>
+                        </el-form-item>
+                        <el-form-item label="凭证图片">
+                            <div style="display:flex;align-items:center;">
+                                <el-input v-model="auditForm.proof_image" placeholder="可选上传图片"
+                                    style="flex:1;margin-right:10px;"></el-input>
+                                <el-upload :action="uploadUrl" :show-file-list="false" :on-success="handleUploadSuccess"
+                                    :before-upload="beforeUpload">
+                                    <el-button type="primary">上传图片</el-button>
+                                </el-upload>
+                            </div>
+                            <div v-if="auditForm.proof_image" style="margin-top:10px;">
+                                <img :src="auditForm.proof_image"
+                                    style="max-width:100px;max-height:100px;border-radius:4px;">
+                            </div>
+                        </el-form-item>
+                    </template>
+
+                </el-form>
+                <template #footer>
+                    <el-button @click="auditVisible = false">取消</el-button>
+                    <el-button type="primary" @click="doAudit">确认提交</el-button>
+                </template>
+            </el-dialog>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, reactive } = Vue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const list = ref([]);
+                const loading = ref(false);
+                const status = ref('');
+                const page = ref(1);
+                const limit = ref(20);
+                const total = ref(0);
+                const auditVisible = ref(false);
+                const auditForm = reactive({ id: 0, status: 0, admin_note: '', proof_image: '' });
+                const uploadUrl = window.API_BASE_URL + '?action=upload';
+
+                const fetchData = async (p = 1) => {
+                    if (typeof p === 'number') page.value = p;
+                    loading.value = true;
+                    // Pass search param
+                    const res = await window.req(`withdrawals&status=${status.value}&page=${page.value}`, {}, 'GET');
+                    loading.value = false;
+                    if (res) {
+                        if (res.data.list) {
+                            list.value = res.data.list;
+                            total.value = parseInt(res.data.total);
+                        } else {
+                            // Handler for format mismatch if any
+                            list.value = res.data;
+                        }
+                    }
+                };
+
+                const handlePageChange = (val) => {
+                    fetchData(val);
+                };
+
+                const parseJSON = (str) => {
+                    try { return JSON.parse(str); } catch (e) { return {}; }
+                };
+
+                const openAudit = (row, newStatus) => {
+                    auditForm.id = row.id;
+                    auditForm.status = newStatus;
+                    auditForm.admin_note = '';
+                    auditForm.proof_image = '';
+                    auditVisible.value = true;
+                };
+
+                const doAudit = async () => {
+                    if (auditForm.status == 2 && !auditForm.admin_note && !auditForm.proof_image) {
+                        return ElementPlus.ElMessage.error('请填写驳回理由或上传图片');
+                    }
+
+                    const res = await window.req('audit_withdraw', { ...auditForm }, 'POST');
+                    if (res) {
+                        ElementPlus.ElMessage.success('已处理');
+                        auditVisible.value = false;
+                        fetchData();
+                    }
+                };
+
+                const handleUploadSuccess = (res) => {
+                    if (res.code == 200) {
+                        auditForm.proof_image = res.data.url;
+                        ElementPlus.ElMessage.success('上传成功');
+                    } else {
+                        ElementPlus.ElMessage.error(res.message || '上传失败');
+                    }
+                };
+
+                const beforeUpload = (file) => {
+                    // Simple check
+                    const isImg = file.type.startsWith('image/');
+                    if (!isImg) ElementPlus.ElMessage.error('只能上传图片');
+                    return isImg;
+                };
+
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchData();
+                });
+
+                return {
+                    list, loading, status, fetchData,
+                    page, limit, total, handlePageChange,
+                    methodMap: window.formatUtils.methodMap,
+                    parseJSON,
+                    // formatDetails: window.formatUtils.formatDetails, // No longer used directly in template
+                    formatKey: (key) => {
+                        const trans = {
+                            bank_name: '银行名称',
+                            account_no: '银行账号',
+                            account_name: '开户人',
+                            alipay_account: '支付宝账号',
+                            real_name: '真实姓名',
+                            wechat_account: '微信号',
+                            realname: '真实姓名',
+                            account_number: '账号',
+                            image: '收款码',
+                            image_url: '收款码'
+                        };
+                        return trans[key] || key;
+                    },
+                    shouldShow: (method, key, val) => {
+                        if (!val) return false; // Hide empty values
+
+                        // If Alipay/WeChat, hide Bank specific fields
+                        if (['alipay', 'wechat'].includes(method)) {
+                            if (['bank_name', 'account_no', 'account_name', 'account_number'].includes(key)) return false;
+                        }
+
+                        // If Alipay, hide WeChat specific
+                        if (method == 'alipay' && key == 'wechat_account') return false;
+
+                        // If WeChat, hide Alipay specific
+                        if (method == 'wechat' && key == 'alipay_account') return false;
+
+                        // If Bank, hide Image/Digital specific
+                        if (method == 'bank' && ['alipay_account', 'wechat_account', 'image', 'image_url'].includes(key)) return false;
+
+                        return true;
+                    },
+                    auditVisible, auditForm, openAudit, doAudit,
+                    uploadUrl, handleUploadSuccess, beforeUpload
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

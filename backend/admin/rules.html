@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动态返佣规则 - 新国创后台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="js/style.css">
+    <style>
+        .page-container {
+            padding: 20px;
+        }
+
+        .rule-card {
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        .tips {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            background: #fdf6ec;
+            padding: 10px;
+            border-radius: 4px;
+            color: #e6a23c;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="rules"></side-menu>
+        <div class="content">
+            <layout-header title="动态返佣规则管理"></layout-header>
+
+            <div class="page-container">
+                <div class="tips">
+                    <i class="el-icon-info"></i> 说明：系统根据用户"左区"和"右区"中较小的那个业绩值（双区Min业绩），匹配下方规则中符合条件的最高档位，每日签到时释放对应的金额。
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <el-button type="primary" @click="openAdd">新增规则</el-button>
+                </div>
+
+                <el-card class="rule-card">
+                    <el-table :data="list" stripe style="width: 100%">
+                        <el-table-column prop="min_performance" label="双区Min业绩阈值">
+                            <template #default="scope">
+                                {{ formatNum(scope.row.min_performance) }}
+                            </template>
+                        </el-table-column>
+                        <el-table-column prop="daily_bonus" label="日释放金额">
+                            <template #default="scope">
+                                <span style="color:#67C23A; font-weight:bold;">{{ formatNum(scope.row.daily_bonus)
+                                    }}</span>
+                            </template>
+                        </el-table-column>
+                        <el-table-column label="操作" width="180">
+                            <template #default="scope">
+                                <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+                                <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+            </div>
+
+            <!-- Dialog -->
+            <el-dialog v-model="dialogVisible" :title="form.id ? '编辑规则' : '新增规则'" width="400px">
+                <el-form label-width="120px">
+                    <el-form-item label="Min业绩阈值">
+                        <el-input v-model="form.min_performance" type="number" placeholder="例如 4000"></el-input>
+                    </el-form-item>
+                    <el-form-item label="日释放金额">
+                        <el-input v-model="form.daily_bonus" type="number" placeholder="例如 40"></el-input>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <span class="dialog-footer">
+                        <el-button @click="dialogVisible = false">取消</el-button>
+                        <el-button type="primary" @click="saveRule" :loading="saving">保存</el-button>
+                    </span>
+                </template>
+            </el-dialog>
+        </div>
+    </div>
+
+    <script src="js/components.js"></script>
+    <script>
+        const { createApp, ref, onMounted, reactive } = Vue;
+
+        createApp({
+            components: {
+                SideMenu: window.SideMenu,
+                LayoutHeader: window.LayoutHeader
+            },
+            setup() {
+                const list = ref([]);
+                const dialogVisible = ref(false);
+                const saving = ref(false);
+                const form = reactive({
+                    id: null,
+                    min_performance: '',
+                    daily_bonus: ''
+                });
+
+                const fetchList = async () => {
+                    try {
+                        const res = await axios.get('../api/admin.php?action=rules');
+                        if (res.data.code === 200) {
+                            list.value = res.data.data;
+                        } else {
+                            ElementPlus.ElMessage.error(res.data.message);
+                        }
+                    } catch (err) {
+                        if (err.response && err.response.status === 401) window.location.href = 'login.html';
+                    }
+                };
+
+                const openAdd = () => {
+                    form.id = null;
+                    form.min_performance = '';
+                    form.daily_bonus = '';
+                    dialogVisible.value = true;
+                };
+
+                const handleEdit = (row) => {
+                    form.id = row.id;
+                    form.min_performance = row.min_performance;
+                    form.daily_bonus = row.daily_bonus;
+                    dialogVisible.value = true;
+                };
+
+                const saveRule = async () => {
+                    if (!form.min_performance || !form.daily_bonus) {
+                        return ElementPlus.ElMessage.warning('请填写完整');
+                    }
+                    saving.value = true;
+                    try {
+                        const res = await axios.post('../api/admin.php?action=save_rule', form);
+                        if (res.data.code === 200) {
+                            ElementPlus.ElMessage.success('保存成功');
+                            dialogVisible.value = false;
+                            fetchList();
+                        } else {
+                            ElementPlus.ElMessage.error(res.data.message);
+                        }
+                    } catch (err) {
+                        ElementPlus.ElMessage.error('Error');
+                    } finally {
+                        saving.value = false;
+                    }
+                };
+
+                const handleDelete = async (row) => {
+                    if (!confirm('确定删除该规则吗?')) return;
+                    try {
+                        const res = await axios.post('../api/admin.php?action=delete_rule', { id: row.id });
+                        if (res.data.code === 200) {
+                            ElementPlus.ElMessage.success('删除成功');
+                            fetchList();
+                        } else {
+                            ElementPlus.ElMessage.error(res.data.message);
+                        }
+                    } catch (e) { ElementPlus.ElMessage.error('Error'); }
+                };
+
+                const formatNum = (val) => {
+                    if (!val) return '0';
+                    return parseFloat(val).toString(); // remove trailing zeros
+                }
+
+                onMounted(() => {
+                    fetchList();
+                });
+
+                return { list, dialogVisible, saving, form, openAdd, handleEdit, saveRule, handleDelete, formatNum };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

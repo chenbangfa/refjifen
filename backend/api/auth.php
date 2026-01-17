@@ -42,9 +42,17 @@ if ($action == 'register') {
     // 4. Create User
     $password_hash = password_hash($data->password, PASSWORD_BCRYPT);
 
-    // Auto-assign position (Simple placement: alternate or just default 'L')
-    // Real logic: User usually chooses L or R. Here we assume 'L' default.
-    $position = isset($data->position) && in_array($data->position, ['L', 'R']) ? $data->position : 'L';
+    // Auto-assign position logic
+    // Default is Left
+    $position = 'L';
+
+    // Check if Parent already has a Left child
+    $stmt = $db->prepare("SELECT id FROM users WHERE parent_id = ? AND position = 'L'");
+    $stmt->execute([$data->invite_code]);
+    if ($stmt->rowCount() > 0) {
+        // Left is occupied, place in Right
+        $position = 'R';
+    }
 
     $sql = "INSERT INTO users (mobile, password, parent_id, position, is_sub_account) VALUES (?, ?, ?, ?, 0)";
     $stmt = $db->prepare($sql);
@@ -100,8 +108,9 @@ if ($action == 'register') {
         echo json_encode(["message" => "Invalid credentials", "code" => 401]);
     }
 
-} elseif ($action == 'switch_account') {
-    // 1. Get Token from Header
+
+} elseif ($action == 'list_accounts') {
+    // Return all accounts sharing the same mobile number
     $headers = getallheaders();
     $jwt = isset($headers['Authorization']) ? str_replace('Bearer ', '', $headers['Authorization']) : null;
     $decoded = $jwtHandler->validate_jwt($jwt);
@@ -112,53 +121,82 @@ if ($action == 'register') {
     }
 
     $current_id = $decoded['data']['id'];
+    $mobile = $decoded['data']['mobile'];
 
-    // Find the linked account
-    // If current is master, find sub. If current is sub, find master.
-    // Query Logic: Find record where linked_mobile matches current mobile OR this record's mobile matches linked...
-    // Let's use a simpler logic: search by 'linked_mobile' and 'mobile' relationship.
-    // Actually, per DB design:
-    // Master: mobile=A, linked_mobile=B (or NULL if not created)
-    // Sub: mobile=B, linked_mobile=A
+    // Improved Logic: Just get all users with this mobile number
+    // This handles "One Mobile, Multiple IDs" correctly without relying on linked_mobile
+    // Removed invite_code from SELECT as it doesn't exist in DB schema
+    $stmt = $db->prepare("SELECT id, mobile, nickname, is_sub_account, level FROM users WHERE mobile = ? ORDER BY id ASC");
+    $stmt->execute([$mobile]);
+    $all_accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // First get current user details to know the mobile
-    $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$current_id]);
-    $currentUser = $stmt->fetch();
+    $users = [];
+    foreach ($all_accounts as $acc) {
+        $acc['is_current'] = ($acc['id'] == $current_id);
+        $acc['invite_code'] = $acc['id']; // Alias ID as invite_code
+        $users[] = $acc;
+    }
 
-    if (!$currentUser['linked_mobile']) {
-        echo json_encode(["message" => "No linked account found", "code" => 404]);
+    echo json_encode(["code" => 200, "data" => $users]);
+
+} elseif ($action == 'quick_login') {
+    // Login to a specific target_id WITHOUT password, if matching mobile
+    $headers = getallheaders();
+    $jwt = isset($headers['Authorization']) ? str_replace('Bearer ', '', $headers['Authorization']) : null;
+    $decoded = $jwtHandler->validate_jwt($jwt);
+
+    if (!$decoded) {
+        echo json_encode(["message" => "Unauthorized", "code" => 401]);
         exit;
     }
 
-    // Find the OTHER account
-    $stmt = $db->prepare("SELECT * FROM users WHERE mobile = ?");
-    $stmt->execute([$currentUser['linked_mobile']]);
-    $targetUser = $stmt->fetch();
+    $current_id = $decoded['data']['id'];
+    $current_mobile = $decoded['data']['mobile'];
+    $target_id = isset($data->target_id) ? $data->target_id : null;
 
-    if ($targetUser) {
-        $token_payload = [
-            "iss" => "refjifen",
-            "data" => [
-                "id" => $targetUser['id'],
-                "mobile" => $targetUser['mobile'],
-                "nickname" => $targetUser['nickname']
-            ]
-        ];
-        $jwt = $jwtHandler->generate_jwt($token_payload);
-        echo json_encode([
-            "message" => "Switched successfully",
-            "token" => $jwt,
-            "user" => [
-                "id" => $targetUser['id'],
-                "mobile" => $targetUser['mobile'],
-                "is_sub_account" => $targetUser['is_sub_account']
-            ],
-            "code" => 200
-        ]);
-    } else {
-        echo json_encode(["message" => "Linked account data error", "code" => 500]);
+    if (!$target_id) {
+        echo json_encode(["message" => "Target ID required", "code" => 400]);
+        exit;
     }
+
+    if ($target_id == $current_id) {
+        // Just return success if already logged in (frontend might just want to confirm)
+        echo json_encode(["message" => "Already logged in", "code" => 200]);
+        exit;
+    }
+
+    // Auth Check: Does target have the same mobile?
+    // We check if the target_id has the same mobile as the current authenticated session
+    $stmt = $db->prepare("SELECT id, mobile, nickname FROM users WHERE id = ?");
+    $stmt->execute([$target_id]);
+    $targetUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$targetUser) {
+        echo json_encode(["message" => "Account not found", "code" => 404]);
+        exit;
+    }
+
+    if ($targetUser['mobile'] !== $current_mobile) {
+        echo json_encode(["message" => "Access Denied: Mobile mismatch", "code" => 403]);
+        exit;
+    }
+
+    // Allow Switch - Generate new token
+    $token_payload = [
+        "iss" => "refjifen",
+        "data" => [
+            "id" => $targetUser['id'],
+            "mobile" => $targetUser['mobile'],
+            "nickname" => $targetUser['nickname']
+        ]
+    ];
+    $jwt = $jwtHandler->generate_jwt($token_payload);
+
+    echo json_encode([
+        "message" => "Switched successfully",
+        "token" => $jwt,
+        "code" => 200
+    ]);
 
 } else {
     echo json_encode(["message" => "Action not found", "code" => 404]);

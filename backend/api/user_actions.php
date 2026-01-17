@@ -21,20 +21,12 @@ $user_id = $user_data['data']['id'];
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
-// Helper from crons (duplicated for standalone scope)
-function getPerformanceRelease($min_perf)
+// ... (Keep existing headers)
+
+function json_out($code, $msg, $data = null)
 {
-    if ($min_perf >= 20000000)
-        return 24000;
-    if ($min_perf >= 50000)
-        return 300;
-    if ($min_perf >= 20000)
-        return 150;
-    if ($min_perf >= 8000)
-        return 80;
-    if ($min_perf >= 4000)
-        return 40;
-    return 0;
+    echo json_encode(["code" => $code, "message" => $msg, "data" => $data]);
+    exit;
 }
 
 if ($action == 'checkin') {
@@ -44,11 +36,10 @@ if ($action == 'checkin') {
     $check = $db->prepare("SELECT id FROM daily_checkin_logs WHERE user_id = ? AND checkin_date = ?");
     $check->execute([$user_id, $today]);
     if ($check->rowCount() > 0) {
-        echo json_encode(["message" => "Already checked in today", "code" => 400]);
-        exit;
+        json_out(409, "今日已完成签到");
     }
 
-    // 2. Refresh User Data
+    // 2. Fetch User & Rules
     $sql = "SELECT u.id, u.level, a.traffic_points, p.left_total, p.right_total 
             FROM users u 
             JOIN assets a ON u.id = a.user_id 
@@ -59,27 +50,45 @@ if ($action == 'checkin') {
     $user = $stmt->fetch();
 
     if (!$user) {
-        echo json_encode(["message" => "User not found", "code" => 404]);
-        exit;
+        json_out(404, "User not found");
     }
 
-    if ($user['traffic_points'] <= 0) {
-        echo json_encode(["message" => "No Traffic Points to release", "code" => 400]);
-        exit;
+    if ($user['traffic_points'] <= 0.01) { // 0.01 tolerance
+        json_out(400, "流量分不足，无法签到释放");
     }
 
-    // 3. Logic
+    // 3. Dynamic Logic
+    // Base Release (Level Based)
     $base_release = ($user['level'] == 2) ? 80 : (($user['level'] == 1) ? 8 : 0);
+
+    // Performance Release (DB Rules)
+    $stmt = $db->prepare("SELECT * FROM acceleration_rules ORDER BY min_performance DESC");
+    $stmt->execute();
+    $rules = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     $min_perf = min($user['left_total'], $user['right_total']);
-    $perf_release = getPerformanceRelease($min_perf);
-    $total_theoretical = $base_release + $perf_release;
+    $perf_release = 0;
+
+    foreach ($rules as $rule) {
+        if ($min_perf >= $rule['min_performance']) {
+            $perf_release = $rule['daily_bonus'];
+            break; // Found highest matching rule
+        }
+    }
+
+    // New Logic: Exclusive. If Dynamic exists, take Dynamic. Else take Base.
+    if ($perf_release > 0) {
+        $total_theoretical = $perf_release;
+    } else {
+        $total_theoretical = $base_release;
+    }
+
+    // Detailed feedback for failure
+    if ($total_theoretical <= 0) {
+        json_out(400, "暂无释放额度。请升级会员(金/钻)或双区业绩达4000以上。当前双区Min: " . number_format($min_perf, 2));
+    }
 
     $actual_release = min($total_theoretical, $user['traffic_points']);
-
-    if ($actual_release <= 0) {
-        echo json_encode(["message" => "Release amount is 0", "code" => 400]);
-        exit;
-    }
 
     // 4. Transaction
     $db->beginTransaction();
@@ -94,20 +103,29 @@ if ($action == 'checkin') {
             WHERE user_id = ?");
         $upd->execute([$actual_release, $to_balance, $to_vouchers, $user['id']]);
 
-        $log = $db->prepare("INSERT INTO daily_checkin_logs (user_id, checkin_date, release_amount) VALUES (?, ?, ?)");
+        $log = $db->prepare("INSERT IGNORE INTO daily_checkin_logs (user_id, checkin_date, release_amount) VALUES (?, ?, ?)");
         $log->execute([$user['id'], $today, $actual_release]);
 
-        $fin = $db->prepare("INSERT INTO logs_finance (user_id, type, asset_type, amount, before_val, after_val, memo) VALUES (?, 'release', 'mixed', ?, 0, 0, ?)");
-        $fin->execute([$user['id'], $actual_release, "Daily Release"]);
+        // 1. Log Traffic Points Deduction
+        $db->prepare("INSERT INTO logs_finance (user_id, type, asset_type, amount, before_val, after_val, memo) VALUES (?, 'release', 'traffic_points', ?, 0, 0, ?)")
+            ->execute([$user['id'], -$actual_release, "每日签到释放扣除"]);
+
+        // 2. Log Balance Addition
+        $db->prepare("INSERT INTO logs_finance (user_id, type, asset_type, amount, before_val, after_val, memo) VALUES (?, 'release', 'balance', ?, 0, 0, ?)")
+            ->execute([$user['id'], $to_balance, "每日签到释放(70%)"]);
+
+        // 3. Log Vouchers Addition
+        $db->prepare("INSERT INTO logs_finance (user_id, type, asset_type, amount, before_val, after_val, memo) VALUES (?, 'release', 'vouchers', ?, 0, 0, ?)")
+            ->execute([$user['id'], $to_vouchers, "每日签到释放(30%)"]);
 
         $db->commit();
-        echo json_encode(["message" => "Checkin Successful. Released: $actual_release", "code" => 200]);
+        json_out(200, "签到成功", ["release_amount" => $actual_release]);
     } catch (Exception $e) {
         $db->rollBack();
-        echo json_encode(["message" => "Error: " . $e->getMessage(), "code" => 500]);
+        json_out(500, "签到失败: " . $e->getMessage());
     }
 
 } else {
-    echo json_encode(["message" => "Action not found", "code" => 404]);
+    json_out(404, "Action not found");
 }
 ?>

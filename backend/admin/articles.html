@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知公告管理 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <!-- Quill CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- Element Plus Icons -->
+    <script src="//unpkg.com/@element-plus/icons-vue"></script>
+    <!-- Quill JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        .ql-container {
+            min-height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="articles"></side-menu>
+        <div class="content">
+            <layout-header title="通知公告管理"></layout-header>
+
+            <div class="page-container">
+                <div style="margin-bottom:15px; display: flex; justify-content: space-between;">
+                    <el-button type="primary" @click="fetchData">刷新列表</el-button>
+                    <el-button type="success" @click="openModal()">+ 发布公告</el-button>
+                </div>
+
+                <el-table :data="list" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="title" label="标题"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.status==1" type="success">已发布</el-tag>
+                            <el-tag v-else type="info">草稿</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="150" fixed="right">
+                        <template #default="scope">
+                            <el-button size="small" type="primary" link @click="openModal(scope.row)">编辑</el-button>
+                            <el-button size="small" type="danger" link @click="doDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+
+            <!-- Modal -->
+            <el-dialog v-model="showModal" :title="form.id ? '编辑公告' : '发布公告'" width="800px" top="5vh"
+                @opened="initQuill" @closed="destroyQuill" :close-on-click-modal="false">
+                <el-form :model="form" label-width="80px">
+                    <el-form-item label="标题">
+                        <el-input v-model="form.title" placeholder="请输入公告标题"></el-input>
+                    </el-form-item>
+                    <el-form-item label="状态">
+                        <el-radio-group v-model="form.status">
+                            <el-radio :label="1">发布</el-radio>
+                            <el-radio :label="0">草稿</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item label="内容">
+                        <div style="line-height: normal; width: 100%;">
+                            <div id="editor" style="height: 400px;"></div>
+                        </div>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="showModal = false">取消</el-button>
+                    <el-button type="primary" @click="save">保存</el-button>
+                </template>
+            </el-dialog>
+
+            <!-- Hidden input for Quill Image Upload -->
+            <input type="file" id="quill-upload-input" style="display: none" accept="image/*"
+                @change="handleQuillUpload">
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted, nextTick } = Vue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const list = ref([]);
+                const loading = ref(false);
+
+                const fetchData = async () => {
+                    loading.value = true;
+                    const res = await window.req('articles', {}, 'GET');
+                    loading.value = false;
+                    if (res) list.value = res.data;
+                };
+
+                const showModal = ref(false);
+                const form = reactive({ id: null, title: '', content: '', status: 1 });
+                let quill = null;
+
+                const openModal = (row = null) => {
+                    if (row) {
+                        Object.assign(form, row);
+                    } else {
+                        Object.assign(form, { id: null, title: '', content: '', status: 1 });
+                    }
+                    showModal.value = true;
+                };
+
+                const initQuill = () => {
+                    nextTick(() => {
+                        if (!document.getElementById('editor')) return;
+
+                        // Prevent multiple inits
+                        const container = document.getElementById('editor');
+                        if (container.classList.contains('ql-container')) {
+                            if (quill) {
+                                const delta = quill.clipboard.convert(form.content || '');
+                                quill.setContents(delta, 'silent');
+                            }
+                            return;
+                        }
+
+                        quill = new Quill('#editor', {
+                            theme: 'snow',
+                            modules: {
+                                toolbar: {
+                                    container: [
+                                        [{ 'header': [1, 2, false] }],
+                                        ['bold', 'italic', 'underline', 'strike'],
+                                        [{ 'color': [] }, { 'background': [] }],
+                                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                        ['link', 'image', 'video'],
+                                        ['clean']
+                                    ],
+                                    handlers: {
+                                        'image': () => {
+                                            document.getElementById('quill-upload-input').click();
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        if (form.content) {
+                            const delta = quill.clipboard.convert(form.content);
+                            quill.setContents(delta, 'silent');
+                        }
+                    });
+                };
+
+                const handleQuillUpload = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    e.target.value = '';
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const actionUrl = window.apiBase ? window.apiBase.replace('api/admin.php', 'api/upload.php') : '../api/upload.php';
+                        const res = await axios.post(actionUrl, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        if (res.data.code == 200) {
+                            const range = quill.getSelection(true);
+                            quill.insertEmbed(range.index, 'image', res.data.url);
+                            quill.setSelection(range.index + 1);
+                        } else {
+                            ElementPlus.ElMessage.error(res.data.message || '上传失败');
+                        }
+                    } catch (err) {
+                        ElementPlus.ElMessage.error('上传出错');
+                    }
+                };
+
+                const destroyQuill = () => { };
+
+                const save = async () => {
+                    if (quill) form.content = quill.root.innerHTML;
+
+                    if (!form.title || !form.content) {
+                        ElementPlus.ElMessage.warning('请填写标题和内容');
+                        return;
+                    }
+
+                    await window.req('save_article', form);
+                    showModal.value = false;
+                    ElementPlus.ElMessage.success('保存成功');
+                    fetchData();
+                };
+
+                const doDelete = async (row) => {
+                    if (!confirm('确定删除吗？')) return;
+                    await window.req('delete_article', { id: row.id });
+                    ElementPlus.ElMessage.success('删除成功');
+                    fetchData();
+                }
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchData();
+                });
+
+                return {
+                    list, loading, fetchData,
+                    showModal, form, openModal, save, doDelete,
+                    initQuill, destroyQuill, handleQuillUpload
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

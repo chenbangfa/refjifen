@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>首页导航管理 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="js/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        /* Force table borders */
+        .el-table--border .el-table__inner-wrapper::after,
+        .el-table--border::after,
+        .el-table--border::before,
+        .el-table__inner-wrapper::before {
+            background-color: #dcdfe6;
+        }
+
+        .el-table__border-left-patch {
+            background-color: #dcdfe6;
+        }
+
+        .el-table--border .el-table__cell {
+            border-right: 1px solid #dcdfe6;
+        }
+
+        .el-table th.el-table__cell {
+            background-color: #f5f7fa;
+            color: #606266;
+            font-weight: bold;
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="nav_items"></side-menu>
+        <div class="content">
+            <layout-header title="首页导航管理"></layout-header>
+
+            <div class="page-container">
+                <div class="header-actions" style="margin-bottom:20px; text-align:right;">
+                    <el-button type="primary" @click="openDialog()">新增导航</el-button>
+                </div>
+
+                <el-table :data="list" style="width: 100%" v-loading="loading" border stripe>
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="name" label="名称" width="150"></el-table-column>
+                    <el-table-column label="图标" width="100">
+                        <template #default="scope">
+                            <el-image style="width: 40px; height: 40px" :src="scope.row.icon" fit="cover"
+                                :preview-src-list="[scope.row.icon]"></el-image>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="类型" width="100">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.type == 1" type="primary">跳转链接</el-tag>
+                            <el-tag v-else type="warning">弹窗提示</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="content" label="内容/链接">
+                        <template #default="scope">
+                            <div style="max-height: 50px; overflow: hidden; text-overflow: ellipsis;">{{
+                                scope.row.content }}</div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="sort" label="排序" width="80"></el-table-column>
+                    <el-table-column label="状态" width="80">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.status == 1" type="success">显示</el-tag>
+                            <el-tag v-else type="info">隐藏</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="180">
+                        <template #default="scope">
+                            <el-button size="small" @click="openDialog(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- Add/Edit Dialog -->
+                <el-dialog v-model="dialogVisible" :title="form.id ? '编辑导航' : '新增导航'" width="500px">
+                    <el-form :model="form" label-width="100px">
+                        <el-form-item label="名称">
+                            <el-input v-model="form.name" placeholder="请输入名称"></el-input>
+                        </el-form-item>
+                        <el-form-item label="图标">
+                            <el-upload class="avatar-uploader" :action="uploadUrl" :show-file-list="false"
+                                :on-success="handleUploadSuccess" :before-upload="beforeUpload">
+                                <img v-if="form.icon" :src="form.icon" class="avatar"
+                                    style="width:60px; height:60px; display:block; border-radius:8px;">
+                                <el-icon v-else class="avatar-uploader-icon"
+                                    style="font-size:28px; color:#8c939d; width:60px; height:60px; line-height:60px; text-align:center; border:1px dashed #d9d9d9; border-radius:8px;">
+                                    <Plus />
+                                </el-icon>
+                            </el-upload>
+                            <div style="font-size:12px;color:#999;margin-top:5px;">建议尺寸 100x100</div>
+                        </el-form-item>
+                        <el-form-item label="类型">
+                            <el-radio-group v-model="form.type">
+                                <el-radio :label="1">跳转链接</el-radio>
+                                <el-radio :label="2">弹窗提示</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item :label="form.type == 1 ? 'URL链接' : '弹窗内容'">
+                            <el-input v-if="form.type == 1" v-model="form.content"
+                                placeholder="请输入跳转链接 (如 /pages/xx)"></el-input>
+                            <el-input v-else type="textarea" v-model="form.content" placeholder="请输入弹窗显示的内容"
+                                rows="4"></el-input>
+                        </el-form-item>
+                        <el-form-item label="排序">
+                            <el-input v-model="form.sort" type="number" placeholder="数字越小越靠前"></el-input>
+                        </el-form-item>
+                        <el-form-item label="状态">
+                            <el-switch v-model="form.status" :active-value="1" :inactive-value="0"></el-switch>
+                        </el-form-item>
+                    </el-form>
+                    <template #footer>
+                        <span class="dialog-footer">
+                            <el-button @click="dialogVisible = false">取消</el-button>
+                            <el-button type="primary" @click="submitForm">确定</el-button>
+                        </span>
+                    </template>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, reactive, toRefs, onMounted } = Vue;
+
+        const app = createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const state = reactive({
+                    list: [],
+                    loading: false,
+                    dialogVisible: false,
+                    form: {
+                        id: 0,
+                        name: '',
+                        icon: '',
+                        type: 2,
+                        content: '板块内容筹建中',
+                        sort: 0,
+                        status: 1
+                    },
+                    uploadUrl: window.API_BASE_URL + '?action=upload'
+                });
+
+                const loadData = async () => {
+                    state.loading = true;
+                    try {
+                        const res = await axios.get(window.API_BASE_URL + '?action=nav_items');
+                        if (res.data.code == 200) {
+                            state.list = res.data.data;
+                        }
+                    } catch (e) { }
+                    state.loading = false;
+                };
+
+                const openDialog = (row = null) => {
+                    if (row) {
+                        state.form = { ...row, type: parseInt(row.type), status: parseInt(row.status) };
+                    } else {
+                        state.form = {
+                            id: 0,
+                            name: '',
+                            icon: '',
+                            type: 2,
+                            content: '板块内容筹建中',
+                            sort: 0,
+                            status: 1
+                        };
+                    }
+                    state.dialogVisible = true;
+                };
+
+                const handleDelete = async (row) => {
+                    if (!confirm('确定要删除此导航吗？')) return;
+                    await axios.get(window.API_BASE_URL + '?action=delete_nav_item&id=' + row.id);
+                    loadData();
+                };
+
+                const handleUploadSuccess = (res) => {
+                    if (res.code === 200) {
+                        state.form.icon = res.data.url;
+                    } else {
+                        alert(res.message);
+                    }
+                };
+
+                const beforeUpload = (file) => {
+                    const isImg = file.type.startsWith('image/');
+                    const isLt2M = file.size / 1024 / 1024 < 2;
+                    if (!isImg) alert('必须是图片格式!');
+                    if (!isLt2M) alert('图片大小不能超过 2MB!');
+                    return isImg && isLt2M;
+                };
+
+                const submitForm = async () => {
+                    if (!state.form.name) return alert('请输入名称');
+                    if (!state.form.icon) return alert('请上传图标');
+
+                    await axios.post(window.API_BASE_URL + '?action=save_nav_item', state.form);
+                    state.dialogVisible = false;
+                    loadData();
+                };
+
+                onMounted(() => {
+                    window.checkLogin();
+                    loadData();
+                });
+
+                return {
+                    ...toRefs(state),
+                    loadData,
+                    openDialog,
+                    handleDelete,
+                    handleUploadSuccess,
+                    beforeUpload,
+                    submitForm
+                };
+            }
+        });
+
+        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+            app.component(key, component)
+        }
+
+        app.use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

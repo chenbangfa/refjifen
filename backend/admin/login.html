@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新国创系统管理登录</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="login-box">
+            <div class="login-title">新国创系统管理登录</div>
+            <el-form :model="form" label-width="0">
+                <el-form-item>
+                    <el-input v-model="form.username" placeholder="用户名"></el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-input v-model="form.password" type="password" placeholder="密码"
+                        @keyup.enter="handleLogin"></el-input>
+                </el-form-item>
+                <el-button type="primary" style="width:100%" @click="handleLogin" :loading="loading">登录</el-button>
+            </el-form>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, reactive, ref } = Vue;
+
+        createApp({
+            setup() {
+                const form = reactive({ username: '', password: '' });
+                const loading = ref(false);
+
+                const handleLogin = async () => {
+                    if (!form.username || !form.password) return;
+                    loading.value = true;
+                    // Note: config.js defines 'req' wrapper but it handles 401 redirect loop. 
+                    // For login we use direct axios or special case.
+                    try {
+                        const res = await axios.post(apiBase + '?action=login', form);
+                        if (res.data.code == 200) {
+                            localStorage.setItem('admin_login', '1');
+                            ElementPlus.ElMessage.success('登录成功');
+                            setTimeout(() => window.location.href = 'users.html', 500);
+                        } else {
+                            ElementPlus.ElMessage.error(res.data.message);
+                        }
+                    } catch (e) { ElementPlus.ElMessage.error('网络错误'); }
+                    loading.value = false;
+                };
+
+                return { form, handleLogin, loading };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

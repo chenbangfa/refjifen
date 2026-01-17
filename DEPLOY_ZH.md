@@ -110,35 +110,38 @@ git clone https://github.com/chenbangfa/refjifen.git .
 5. 提交。
 
 ### 第二步：上传代码（推荐 Git）
-1. 进入该站点的根目录（通常是 `/www/wwwroot/jifen.yourdomain.com`）。
+1. 进入该站点的根目录：
+   ```bash
+   cd /www/wwwroot/ref.tajian.cc
+   ```
 2. 删除目录下默认的 `index.html` / `404.html`。
 3. 点击 **终端** 按钮，输入：
    ```bash
    git clone https://github.com/chenbangfa/refjifen.git .
    ```
-   *(注意命令最后有个点 `.`，代表克隆到当前目录)*
+   *(注意命令最后有个点 `.`，代表克隆到当前目录。如果目录非空，git可能会报错，需先清空或使用 `git init && git remote add... && git pull`)*
 4. 这时你会看到 `backend` 文件夹出现在目录里。
 
 ### 第三步：配置数据库
 1. 在宝塔面板 -> **数据库** -> 点击刚才创建的数据库的 **管理** (phpMyAdmin)。
 2. 导入 `backend/database.sql` 文件。
-3.回到文件管理，编辑 `backend/config/database.php`，填入刚才创建的数据库账号密码。
+3. 回到文件管理，编辑 `/www/wwwroot/ref.tajian.cc/backend/config/database.php`，填入刚才创建的数据库账号密码。
 
 ### 第四步：构建并上传前端 H5
 *这一步最关键，不要搞错！*
 
 1. **本地电脑修改配置**：
    - 打开 HBuilderX -> `frontend/refjifen_h5/App.vue`。
-   - 将 `baseUrl` 改为：`http://jifen.yourdomain.com/backend/api/` (换成你的真实域名)。
+   - 确认 `baseUrl` 已改为：`http://ref.tajian.cc/backend/api/`。
 2. **本地打包**：
    - HBuilderX -> 发行 -> 网站-PC Web或手机H5。
-   - 填写标题，**运行的基础路径**填 `./` (除非你想放在子目录)。
+   - 填写标题，**运行的基础路径**填 `./`。
 3. **上传**：
    - 打包完成后，找到生成的 `h5` 文件夹（里面有 static, index.html）。
-   - 把 `h5` 文件夹里的**所有内容**，拖拽上传到宝塔网站根目录。
+   - 把 `h5` 文件夹里的**所有内容**，拖拽上传到宝塔目录 `/www/wwwroot/ref.tajian.cc/`。
    - **最终结构**应该长这样：
      ```
-     /www/wwwroot/jifen.yourdomain.com/
+     /www/wwwroot/ref.tajian.cc/
      ├── index.html       (前端入口)
      ├── static/          (前端资源)
      ├── backend/         (后端文件夹)
@@ -169,7 +172,36 @@ git clone https://github.com/chenbangfa/refjifen.git .
     - 既然你要给客户通过域名访问了。
     - 或者你要生成 Android APK 安装包了。
 
+    - 或者你要生成 Android APK 安装包了。
+
 **技巧**：
 你可以保持 `App.vue` 里指向线上 API，这样你在本地改前端样式，直接就能看到对接线上真实数据的效果，**无需上传前端代码**。
+
+---
+
+## 6. 常见故障排查 (Troubleshooting)
+
+### Q1: 访问网站提示 404 或 403 Forbidden？
+**原因 A**：你上传错位置了。
+- 错误路径：`/www/wwwroot/ref.tajian.cc/h5/index.html` (多了一层 h5 文件夹)
+- 正确路径：`/www/wwwroot/ref.tajian.cc/index.html` (必须在根目录)
+**解决**：把 `h5` 文件夹里的所有内容剪切出来，放到根目录。
+
+**原因 B**：权限问题。
+- 确保宝塔里该网站目录权限是 `755`，所有者是 `www`。
+
+### Q2: 网站显示了，但无法登录（API 请求失败）？
+**原因 A**：混合内容错误 (Mixed Content)。
+- 你的网站是 `https://...`，但 App.vue 里 API 写的是 `http://...`。
+- 浏览器会阻止 HTTPS 网站请求 HTTP 接口。
+**解决**：
+1. 确保宝塔里已配置 SSL 证书（Let's Encrypt 免费申请）。
+2. 把 `App.vue` 里的 baseUrl 改成 `https://ref.tajian.cc/backend/api/` (注意是 https)。
+3. 重新打包 H5 并上传。
+
+### Q3: 只是显示空白页？
+**原因**：路由配置错误。
+- 确保 HBuilderX 打包时，**运行的基础路径** 填的是 `./`。
+
 
 

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服咨询 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        .chat-layout {
+            display: flex;
+            height: calc(100vh - 80px);
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            overflow: hidden;
+        }
+
+        .user-list {
+            width: 280px;
+            border-right: 1px solid #eee;
+            overflow-y: auto;
+            background: #fcfcfc;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        .user-item {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .user-item:hover {
+            background: #f0f0f0;
+        }
+
+        .user-item.active {
+            background: #e6f7ff;
+            border-left: 3px solid #1890ff;
+        }
+
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .u-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .u-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+            background: #f9f9f9;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f5f5f5;
+        }
+
+        .msg-row {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        .msg-row.admin {
+            flex-direction: row-reverse;
+        }
+
+        .bubble {
+            padding: 10px 14px;
+            border-radius: 8px;
+            max-width: 70%;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+        }
+
+        .msg-row.user .bubble {
+            background: #fff;
+            border: 1px solid #eee;
+            margin-left: 10px;
+        }
+
+        .msg-row.admin .bubble {
+            background: #95ec69;
+            margin-right: 10px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .chat-footer {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            background: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="chat"></side-menu>
+        <div class="content">
+            <layout-header title="客服咨询"></layout-header>
+
+            <div class="chat-layout">
+                <!-- User List -->
+                <div class="user-list">
+                    <div class="user-item" v-for="user in userList" :key="user.user_id"
+                        :class="{active: activeUser && activeUser.user_id == user.user_id}" @click="selectUser(user)">
+                        <div class="avatar" style="margin-right:10px;">User</div>
+                        <div class="user-info">
+                            <div class="u-name">
+                                {{ user.nickname || '用户'+user.user_id }}
+                                <el-badge :value="user.unread" v-if="user.unread > 0" class="item" type="danger"
+                                    style="margin-left:5px;"></el-badge>
+                            </div>
+                            <div class="u-time">{{ user.last_time }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div class="chat-area" v-if="activeUser">
+                    <div class="chat-header">
+                        与 {{ activeUser.nickname || '用户'+activeUser.user_id }} 的对话 ({{ activeUser.mobile }})
+                    </div>
+
+                    <div class="chat-body" ref="chatBody">
+                        <div v-for="(msg, idx) in messages" :key="idx" class="msg-row" :class="msg.sender">
+                            <div class="avatar">{{ msg.sender == 'admin' ? '我' : 'U' }}</div>
+                            <div class="bubble">
+                                <div v-if="msg.type=='text'">{{ msg.content }}</div>
+                                <img v-else :src="msg.content"
+                                    style="max-width: 200px; border-radius: 4px; cursor: pointer;"
+                                    onclick="window.open(this.src)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-footer">
+                        <el-input v-model="replyText" placeholder="输入回复内容..." @keyup.enter="sendReply"></el-input>
+                        <el-button type="primary" @click="sendReply">发送</el-button>
+                    </div>
+                </div>
+
+                <div class="chat-area" v-else style="align-items: center; justify-content: center; color: #999;">
+                    请选择左侧用户开始对话
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, onUnmounted, nextTick } = Vue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const userList = ref([]);
+                const activeUser = ref(null);
+                const messages = ref([]);
+                const replyText = ref('');
+                const chatBody = ref(null);
+                let pollTimer = null;
+
+                const fetchUsers = async () => {
+                    const res = await window.req('chat_list', {}, 'GET');
+                    if (res && res.code == 200) {
+                        userList.value = res.data;
+                    }
+                };
+
+                const fetchMessages = async () => {
+                    if (!activeUser.value) return;
+                    // Silent fetch
+                    const res = await window.req('chat_history&user_id=' + activeUser.value.user_id, {}, 'GET');
+                    if (res && res.code == 200) {
+                        const isBottom = chatBody.value && (chatBody.value.scrollHeight - chatBody.value.scrollTop <= chatBody.value.clientHeight + 50);
+                        const oldLen = messages.value.length;
+                        messages.value = res.data;
+
+                        // If new messages or user was at bottom, scroll to bottom
+                        if (messages.value.length > oldLen || isBottom) {
+                            scrollToBottom();
+                        }
+                    }
+                };
+
+                const selectUser = (user) => {
+                    activeUser.value = user;
+                    user.unread = 0; // Optimistic clear
+                    fetchMessages();
+                    scrollToBottom();
+                };
+
+                const scrollToBottom = () => {
+                    nextTick(() => {
+                        if (chatBody.value) chatBody.value.scrollTop = chatBody.value.scrollHeight;
+                    });
+                };
+
+                const sendReply = async () => {
+                    if (!replyText.value.trim()) return;
+                    const txt = replyText.value;
+                    replyText.value = '';
+
+                    const res = await window.req('chat_reply', { user_id: activeUser.value.user_id, content: txt, type: 'text' }, 'POST');
+                    if (res && res.code == 200) {
+                        fetchMessages();
+                    } else {
+                        ElementPlus.ElMessage.error(res.message || '发送失败');
+                    }
+                };
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchUsers();
+                    pollTimer = setInterval(() => {
+                        fetchUsers();
+                        fetchMessages();
+                    }, 3000);
+                });
+
+                onUnmounted(() => {
+                    if (pollTimer) clearInterval(pollTimer);
+                });
+
+                return {
+                    userList, activeUser, messages, replyText, chatBody,
+                    selectUser, sendReply
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

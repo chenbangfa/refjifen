@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单列表 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        /* Force table borders */
+        .el-table--border .el-table__inner-wrapper::after,
+        .el-table--border::after,
+        .el-table--border::before,
+        .el-table__inner-wrapper::before {
+            background-color: #dcdfe6;
+        }
+
+        .el-table__border-left-patch {
+            background-color: #dcdfe6;
+        }
+
+        .el-table--border .el-table__cell {
+            border-right: 1px solid #dcdfe6;
+        }
+
+        .el-table th.el-table__cell {
+            background-color: #f5f7fa;
+            color: #606266;
+            font-weight: bold;
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="orders"></side-menu>
+        <div class="content">
+            <layout-header title="订单列表"></layout-header>
+
+            <div class="page-container">
+                <div class="table-header" style="display:flex;justify-content:space-between;margin-bottom:20px;">
+                    <div style="display:flex;gap:10px;">
+                        <el-input v-model="searchQuery" placeholder="搜索订单号/手机/商品/地址" style="width: 300px;"
+                            @keyup.enter="fetchData(1)" clearable @clear="fetchData(1)"></el-input>
+                        <el-button type="primary" @click="fetchData(1)">搜索</el-button>
+                    </div>
+                    <el-button type="success" @click="doExport">导出Excel</el-button>
+                </div>
+
+                <el-table :data="list" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="order_sn" label="订单号" width="180"></el-table-column>
+                    <el-table-column label="用户" width="120">
+                        <template #default="scope">
+                            <div>{{ scope.row.mobile }}</div>
+                            <div style="font-size:12px;color:#888;">ID: {{ scope.row.user_id }}</div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="商品信息" width="300">
+                        <template #default="scope">
+                            <div v-for="(item, idx) in scope.row.goods_list" :key="idx"
+                                style="display:flex;margin-bottom:5px;border-bottom:1px dashed #f5f5f5;padding-bottom:5px;">
+                                <img v-if="item.image" :src="item.image"
+                                    style="width:40px;height:40px;object-fit:cover;margin-right:8px;border-radius:4px;">
+                                <div style="flex:1;">
+                                    <div style="font-size:12px;line-height:1.4;">{{ item.title }}</div>
+                                    <div style="font-size:12px;color:#999;">
+                                        小计: ¥{{ item.amount }} <span style="margin-left:5px;">x{{ item.quantity
+                                            }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="订单总额" width="100">
+                        <template #default="scope">
+                            <div style="color:#f56c6c;font-weight:bold;">¥{{ scope.row.amount }}</div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="收货信息" width="220">
+                        <template #default="scope">
+                            <div v-if="scope.row.receiver_info">
+                                <div v-if="parseJSON(scope.row.receiver_info).name">{{
+                                    parseJSON(scope.row.receiver_info).name }} {{
+                                    parseJSON(scope.row.receiver_info).mobile }}</div>
+                                <div style="font-size:12px;color:#666;line-height:1.2;">{{
+                                    parseJSON(scope.row.receiver_info).address }} {{
+                                    parseJSON(scope.row.receiver_info).detail || '' }}</div>
+                            </div>
+                            <div v-else>-</div>
+                        </template>
+                    </el-table-column>
+
+                    <!-- Updated Remark Columns -->
+                    <el-table-column label="用户留言" prop="remark" width="150" show-overflow-tooltip></el-table-column>
+                    <el-table-column label="管理员备注" prop="admin_remark" width="150"
+                        show-overflow-tooltip></el-table-column>
+
+                    <!-- Separated Logistics -->
+                    <el-table-column label="物流信息" width="180">
+                        <template #default="scope">
+                            <div v-if="scope.row.status >= 2" style="font-size:12px;">
+                                <div>{{ scope.row.express_company }}</div>
+                                <div style="color:#666;">{{ scope.row.tracking_number }}</div>
+                            </div>
+                            <div v-else>-</div>
+                        </template>
+                    </el-table-column>
+
+                    <!-- Status Only -->
+                    <el-table-column label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.status==0" type="info">待支付</el-tag>
+                            <el-tag v-if="scope.row.status==1" type="warning">待发货</el-tag>
+                            <el-tag v-if="scope.row.status==2" type="success">已发货</el-tag>
+                            <el-tag v-if="scope.row.status==3" type="success">已完成</el-tag>
+                            <el-tag v-if="scope.row.status==5" type="danger">售后中</el-tag>
+                        </template>
+                    </el-table-column>
+
+                    <!-- Updated Operations -->
+                    <el-table-column label="操作" width="160" fixed="right">
+                        <template #default="scope">
+                            <div style="display:flex;gap:5px;">
+                                <el-button v-if="scope.row.status==1" size="small" type="primary"
+                                    @click="openShip(scope.row)">发货</el-button>
+                                <el-button v-if="scope.row.status==5" size="small" type="warning"
+                                    @click="openRefund(scope.row)">查看售后</el-button>
+                                <el-button size="small" type="default" @click="openEdit(scope.row)">修改</el-button>
+                            </div>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                </el-table>
+
+                <!-- Pagination -->
+                <div style="margin-top: 30px; text-align: center;">
+                    <el-pagination background layout="prev, pager, next" :total="total" :page-size="limit"
+                        @current-change="handlePageChange"></el-pagination>
+                </div>
+            </div>
+
+            <!-- Ship Modal -->
+            <el-dialog v-model="shipVisible" title="订单发货" width="400px">
+                <el-form label-width="80px">
+                    <el-form-item label="快递公司">
+                        <el-input v-model="shipForm.express_company" placeholder="例如: 顺丰快递"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物流单号">
+                        <el-input v-model="shipForm.tracking_number" placeholder="请输入快递单号"></el-input>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="shipVisible = false">取消</el-button>
+                    <el-button type="primary" @click="doShip">确定发货</el-button>
+                </template>
+            </el-dialog>
+
+            <!-- Edit Modal -->
+            <el-dialog v-model="editVisible" title="修改订单" width="400px">
+                <el-form label-width="80px">
+                    <el-form-item label="订单状态">
+                        <el-select v-model="editForm.status" placeholder="选择状态">
+                            <el-option label="待支付" :value="0"></el-option>
+                            <el-option label="待发货" :value="1"></el-option>
+                            <el-option label="已发货" :value="2"></el-option>
+                            <el-option label="已完成" :value="3"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="管理备注">
+                        <el-input type="textarea" v-model="editForm.admin_remark" rows="3"></el-input>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="editVisible = false">取消</el-button>
+                    <el-button type="primary" @click="doEdit">保存修改</el-button>
+                </template>
+            </el-dialog>
+            <!-- Refund Modal -->
+            <el-dialog v-model="refundVisible" title="售后详情" width="500px">
+                <el-descriptions :column="1" border>
+                    <el-descriptions-item label="售后类型">{{ refundForm.as_type == 1 ? '仅退款' : '退货退款'
+                        }}</el-descriptions-item>
+                    <el-descriptions-item label="申请状态">
+                        <el-tag size="small" :type="['info','success','danger','info'][refundForm.as_status] || 'info'">
+                            {{ ['审核中','已同意','已拒绝','已取消'][refundForm.as_status] || '未知' }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="申请时间">{{ refundForm.as_time }}</el-descriptions-item>
+                    <el-descriptions-item label="申请原因">{{ refundForm.as_reason }}</el-descriptions-item>
+                    <el-descriptions-item label="凭证图片">
+                        <div v-if="refundForm.as_images" style="display:flex;gap:5px;flex-wrap:wrap;">
+                            <img v-for="(img,i) in refundForm.as_images.split(',')" :key="i" :src="img"
+                                style="width:60px;height:60px;object-fit:cover;border-radius:4px;cursor:pointer;"
+                                @click="window.open(img)">
+                        </div>
+                        <div v-else>无</div>
+                    </el-descriptions-item>
+                </el-descriptions>
+                <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+                    <el-button @click="refundVisible = false">关闭</el-button>
+                </div>
+            </el-dialog>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, reactive } = Vue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const list = ref([]);
+                const loading = ref(false);
+                const shipVisible = ref(false);
+                const editVisible = ref(false);
+                const refundVisible = ref(false); // New
+                const shipForm = reactive({ id: 0, tracking_number: '', express_company: '' });
+                const editForm = reactive({ id: 0, status: 0, admin_remark: '' });
+                const refundForm = reactive({}); // New
+                const searchQuery = ref('');
+                const page = ref(1);
+                const limit = ref(20);
+                const total = ref(0);
+
+                const fetchData = async (p = 1) => {
+                    if (typeof p === 'number') page.value = p;
+                    loading.value = true;
+                    // Pass search param
+                    const res = await window.req(`orders&search=${searchQuery.value}&page=${page.value}`, {}, 'GET');
+                    loading.value = false;
+                    if (res) {
+                        if (res.data.list) {
+                            list.value = res.data.list;
+                            total.value = parseInt(res.data.total);
+                        } else {
+                            list.value = res.data;
+                        }
+                    }
+                };
+
+                const handlePageChange = (val) => {
+                    fetchData(val);
+                };
+
+                const doExport = () => {
+                    const baseUrl = window.API_BASE_URL.replace('/admin.php', '');
+                    window.location.href = `${window.API_BASE_URL}?action=orders&export=1&search=${searchQuery.value}`;
+                };
+
+                const parseJSON = (str) => {
+                    try { return JSON.parse(str); } catch (e) { return {}; }
+                };
+
+                // Ship Logic
+                const openShip = (row) => {
+                    shipForm.id = row.id;
+                    shipForm.tracking_number = '';
+                    shipForm.express_company = '';
+                    shipVisible.value = true;
+                };
+
+                const doShip = async () => {
+                    if (!shipForm.tracking_number) return ElementPlus.ElMessage.error('请输入单号');
+                    if (!shipForm.express_company) return ElementPlus.ElMessage.error('请输入快递公司');
+                    const res = await window.req('ship_order', { ...shipForm }, 'POST');
+                    if (res && res.code == 200) {
+                        ElementPlus.ElMessage.success('发货成功');
+                        shipVisible.value = false;
+                        fetchData();
+                    }
+                };
+
+                // Edit Logic
+                const openEdit = (row) => {
+                    editForm.id = row.id;
+                    editForm.status = parseInt(row.status);
+                    editForm.admin_remark = row.admin_remark || '';
+                    editVisible.value = true;
+                };
+
+                const doEdit = async () => {
+                    const res = await window.req('update_order', { ...editForm }, 'POST');
+                    if (res && res.code == 200) {
+                        ElementPlus.ElMessage.success('修改成功');
+                        editVisible.value = false;
+                        fetchData();
+                    }
+                };
+
+                // Refund Logic
+                const openRefund = (row) => {
+                    Object.assign(refundForm, row);
+                    refundVisible.value = true;
+                };
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchData();
+                });
+
+                return {
+                    list, loading, parseJSON, searchQuery, fetchData, doExport,
+                    page, limit, total, handlePageChange,
+                    shipVisible, shipForm, openShip, doShip,
+                    editVisible, editForm, openEdit, doEdit,
+                    refundVisible, refundForm, openRefund
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

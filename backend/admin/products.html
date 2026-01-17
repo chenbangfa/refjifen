@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <!-- Quill CSS -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- Element Plus Icons -->
+    <script src="//unpkg.com/@element-plus/icons-vue"></script>
+    <!-- Quill JS -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        .ql-container {
+            min-height: 200px;
+        }
+
+        .hide-upload .el-upload--picture-card {
+            display: none;
+        }
+
+        /* Force table borders */
+        .el-table--border .el-table__inner-wrapper::after,
+        .el-table--border::after,
+        .el-table--border::before,
+        .el-table__inner-wrapper::before {
+            background-color: #dcdfe6;
+        }
+
+        .el-table__border-left-patch {
+            background-color: #dcdfe6;
+        }
+
+        .el-table--border .el-table__cell {
+            border-right: 1px solid #dcdfe6;
+        }
+
+        .el-table th.el-table__cell {
+            background-color: #f5f7fa;
+            color: #606266;
+            font-weight: bold;
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="products"></side-menu>
+        <div class="content">
+            <layout-header title="商品管理"></layout-header>
+
+            <div class="page-container">
+                <div style="display:flex; align-items:center; margin-bottom:15px; gap:10px;">
+                    <el-input v-model="filters.search" placeholder="商品名称" style="width: 200px;" clearable
+                        @clear="fetchData(1)" @keyup.enter="fetchData(1)"></el-input>
+                    <el-select v-model="filters.category_id" placeholder="全部分类" style="width: 120px;" clearable
+                        @change="fetchData(1)">
+                        <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id"></el-option>
+                    </el-select>
+                    <el-select v-model="filters.zone" placeholder="全部分区" style="width: 120px;" clearable
+                        @change="fetchData(1)">
+                        <el-option label="余额区(A)" value="A"></el-option>
+                        <el-option label="券区(B)" value="B"></el-option>
+                    </el-select>
+                    <el-button type="primary" @click="fetchData(1)">搜索</el-button>
+                    <div style="flex:1"></div>
+                    <el-button type="success" @click="openModal()">+ 发布商品</el-button>
+                </div>
+
+                <el-table :data="list" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="60"></el-table-column>
+                    <el-table-column prop="image" label="图片" width="80">
+                        <template #default="scope">
+                            <img v-if="scope.row.image" :src="scope.row.image.split(',')[0]"
+                                style="width:40px;height:40px;object-fit:cover; border-radius:4px;">
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="title" label="商品名称" min-width="150"></el-table-column>
+                    <el-table-column prop="category_name" label="分类" width="100"></el-table-column>
+                    <el-table-column prop="price" label="价格" width="100"></el-table-column>
+
+                    <el-table-column prop="zone" label="分区" width="120">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.zone=='A'" type="danger">余额区(赚流量分)</el-tag>
+                            <el-tag v-else type="info">券区(消泡沫)</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="stock" label="库存" width="100"></el-table-column>
+                    <el-table-column label="状态" width="80">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.status == 1" type="success">上架</el-tag>
+                            <el-tag v-else type="info">下架</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="100" fixed="right">
+                        <template #default="scope">
+                            <el-button size="small" type="primary" link @click="openModal(scope.row)">编辑</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+                </el-table>
+
+                <!-- Pagination -->
+                <div style="margin-top: 30px; text-align: center;">
+                    <el-pagination background layout="prev, pager, next" :total="total" :page-size="limit"
+                        @current-change="handlePageChange"></el-pagination>
+                </div>
+            </div>
+
+            <!-- Modal -->
+            <el-dialog v-model="showModal" :title="form.id ? '编辑商品' : '发布商品'" width="800px" top="5vh"
+                @opened="initQuill" @closed="destroyQuill">
+                <el-form :model="form" label-width="80px">
+                    <el-row :gutter="20">
+                        <el-col :span="24">
+                            <el-form-item label="商品名称">
+                                <el-input v-model="form.title"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="商品分类">
+                                <el-select v-model="form.category_id" placeholder="选择分类" style="width:100%">
+                                    <el-option v-for="c in categories" :key="c.id" :label="c.name"
+                                        :value="c.id"></el-option>
+                                </el-select>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="价格">
+                                <el-input v-model="form.price" type="number"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="单位">
+                                <el-input v-model="form.unit" placeholder="如: 件/个"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="库存">
+                                <el-input v-model="form.stock" type="number"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="虚拟销量">
+                                <el-input v-model="form.sales" type="number"></el-input>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="12">
+                            <el-form-item label="分区">
+                                <el-radio-group v-model="form.zone">
+                                    <el-radio label="A">A区 (余额)</el-radio>
+                                    <el-radio label="B">B区 (券)</el-radio>
+                                </el-radio-group>
+                            </el-form-item>
+                        </el-col>
+
+                        <el-col :span="24">
+                            <el-form-item label="状态">
+                                <el-switch v-model="form.status" :active-value="1" :inactive-value="0"></el-switch>
+                            </el-form-item>
+                        </el-col>
+                        <el-col :span="24">
+                            <el-form-item label="商品图片">
+                                <el-upload v-model:file-list="fileList" action="../api/upload.php" name="file"
+                                    list-type="picture-card" :limit="5" :on-success="handleUploadSuccess"
+                                    :on-remove="handleRemove" :before-upload="beforeAvatarUpload"
+                                    :class="{ 'hide-upload': fileList.length >= 5 }">
+                                    <el-icon>
+                                        <Plus />
+                                    </el-icon>
+                                </el-upload>
+                                <div style="font-size:12px;color:#999;margin-top:5px;">建议尺寸 500x500，最多5张</div>
+                            </el-form-item>
+                        </el-col>
+                    </el-row>
+
+                    <el-form-item label="详细介绍">
+                        <div style="line-height: normal; width: 100%;">
+                            <div id="editor" style="height: 300px;"></div>
+                        </div>
+                        <div style="margin-top:5px;">
+                            <el-button size="small" type="primary" link @click="insertImagesToDesc"
+                                v-if="fileList.length > 0">一键插入上方图片</el-button>
+                        </div>
+                    </el-form-item>
+
+                </el-form>
+                <template #footer>
+                    <el-button @click="showModal = false">取消</el-button>
+                    <el-button type="primary" @click="save">保存</el-button>
+                </template>
+            </el-dialog>
+
+            <!-- Hidden input for Quill Image Upload -->
+            <input type="file" id="quill-upload-input" style="display: none" accept="image/*"
+                @change="handleQuillUpload">
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted, nextTick } = Vue;
+        const { Plus } = ElementPlusIconsVue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader, Plus },
+            setup() {
+                const list = ref([]);
+                const loading = ref(false);
+                const categories = ref([]); // Categories
+                const filters = reactive({ search: '', zone: '', category_id: '' });
+                const fileList = ref([]); // For el-upload
+
+                const page = ref(1);
+                const limit = ref(20);
+                const total = ref(0);
+
+                const fetchCategories = async () => {
+                    const res = await window.req('categories', {}, 'GET');
+                    if (res) categories.value = res.data;
+                };
+
+                const fetchData = async (p = 1) => {
+                    if (typeof p === 'number') page.value = p;
+                    loading.value = true;
+                    let q = `products&page=${page.value}`;
+                    if (filters.search) q += `&search=${encodeURIComponent(filters.search)}`;
+                    if (filters.zone) q += `&zone=${filters.zone}`;
+                    if (filters.category_id) q += `&category_id=${filters.category_id}`;
+
+                    const res = await window.req(q, {}, 'GET');
+                    loading.value = false;
+                    if (res) {
+                        if (res.data.list) {
+                            list.value = res.data.list;
+                            total.value = parseInt(res.data.total);
+                        } else {
+                            list.value = res.data;
+                        }
+                    }
+                };
+
+                const handlePageChange = (val) => {
+                    fetchData(val);
+                };
+
+                const showModal = ref(false);
+                const form = reactive({ id: null, title: '', image: '', price: '', traffic_ratio: 1.0, zone: 'A', stock: 999, sales: 0, unit: '件', status: 1, description: '', category_id: '' });
+                let quill = null;
+
+                const openModal = (row = null) => {
+                    fileList.value = [];
+                    if (row) {
+                        Object.assign(form, row);
+                        if (form.image) {
+                            fileList.value = form.image.split(',').map(url => ({ name: url, url: url }));
+                        }
+                    } else {
+                        Object.assign(form, { id: null, title: '', image: '', price: '', traffic_ratio: 1.0, zone: 'A', stock: 999, sales: 0, unit: '件', status: 1, description: '', category_id: '' });
+                    }
+                    showModal.value = true;
+                };
+
+                const initQuill = () => {
+                    nextTick(() => {
+                        if (!document.getElementById('editor')) return;
+
+                        // Prevent multiple inits
+                        const container = document.getElementById('editor');
+                        if (container.classList.contains('ql-container')) {
+                            if (quill) {
+                                const content = form.description || '';
+                                const delta = quill.clipboard.convert(content);
+                                quill.setContents(delta, 'silent');
+                            }
+                            return;
+                        }
+
+                        quill = new Quill('#editor', {
+                            theme: 'snow',
+                            modules: {
+                                toolbar: {
+                                    container: [
+                                        [{ 'header': [1, 2, false] }],
+                                        ['bold', 'italic', 'underline'],
+                                        ['image', 'code-block']
+                                    ],
+                                    handlers: {
+                                        'image': () => {
+                                            document.getElementById('quill-upload-input').click();
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        if (form.description) {
+                            const delta = quill.clipboard.convert(form.description);
+                            quill.setContents(delta, 'silent');
+                        }
+                    });
+                };
+
+                const handleQuillUpload = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    e.target.value = '';
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    try {
+                        const actionUrl = window.apiBase ? window.apiBase.replace('api/admin.php', 'api/upload.php') : '../api/upload.php';
+                        const res = await axios.post(actionUrl, formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                        });
+                        if (res.data.code == 200) {
+                            const range = quill.getSelection(true);
+                            quill.insertEmbed(range.index, 'image', res.data.url);
+                            quill.setSelection(range.index + 1);
+                        } else {
+                            ElementPlus.ElMessage.error(res.data.message || '上传失败');
+                        }
+                    } catch (err) {
+                        ElementPlus.ElMessage.error('上传出错');
+                    }
+                };
+
+                const destroyQuill = () => { };
+
+                const insertImagesToDesc = () => {
+                    if (!quill) return;
+                    fileList.value.forEach(file => {
+                        const url = file.url || file.response?.url;
+                        if (url) {
+                            const range = quill.getSelection(true);
+                            quill.insertEmbed(range.index, 'image', url);
+                            quill.setSelection(range.index + 1);
+                        }
+                    });
+                    ElementPlus.ElMessage.success('已插入图片');
+                };
+
+                const handleUploadSuccess = (res, file) => {
+                    if (res.code == 200) {
+                        file.url = res.url;
+                    } else {
+                        ElementPlus.ElMessage.error(res.message || '上传失败');
+                        const idx = fileList.value.indexOf(file);
+                        if (idx !== -1) fileList.value.splice(idx, 1);
+                    }
+                };
+                const handleRemove = (file, fileListRef) => { };
+                const beforeAvatarUpload = (file) => {
+                    const isIMG = file.type.startsWith('image/');
+                    const isLt2M = file.size / 1024 / 1024 < 2;
+                    if (!isIMG) ElementPlus.ElMessage.error('只能上传图片!');
+                    if (!isLt2M) ElementPlus.ElMessage.error('图片大小不超过 2MB!');
+                    return isIMG && isLt2M;
+                };
+
+                const save = async () => {
+                    if (quill) form.description = quill.root.innerHTML;
+                    const urls = fileList.value.map(f => f.url || f.response?.url).filter(u => u);
+                    form.image = urls.join(',');
+
+                    if (!form.title || !form.price || urls.length === 0) {
+                        ElementPlus.ElMessage.warning('请填写必填项及至少一张图片');
+                        return;
+                    }
+
+                    await window.req('save_product', form);
+                    showModal.value = false;
+                    ElementPlus.ElMessage.success('保存成功');
+                    fetchData();
+                };
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchCategories();
+                    fetchData();
+                });
+
+                return {
+                    list, loading, categories, filters, fetchData,
+                    page, limit, total, handlePageChange,
+                    showModal, form, openModal, save,
+                    initQuill, destroyQuill, insertImagesToDesc,
+                    fileList, handleUploadSuccess, handleRemove, beforeAvatarUpload,
+                    handleQuillUpload
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

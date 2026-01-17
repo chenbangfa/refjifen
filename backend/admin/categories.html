@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类管理 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="js/style.css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+    <style>
+        /* Force table borders */
+        .el-table--border .el-table__inner-wrapper::after,
+        .el-table--border::after,
+        .el-table--border::before,
+        .el-table__inner-wrapper::before {
+            background-color: #dcdfe6;
+        }
+
+        .el-table__border-left-patch {
+            background-color: #dcdfe6;
+        }
+
+        .el-table--border .el-table__cell {
+            border-right: 1px solid #dcdfe6;
+        }
+
+        .el-table th.el-table__cell {
+            background-color: #f5f7fa;
+            color: #606266;
+            font-weight: bold;
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid #dcdfe6 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="categories"></side-menu>
+        <div class="content">
+            <layout-header title="商品分类"></layout-header>
+
+            <div class="page-container">
+                <div style="margin-bottom:15px; text-align:right;">
+                    <el-button type="primary" @click="openModal()">+ 新增分类</el-button>
+                </div>
+
+                <el-table :data="list" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="name" label="分类名称"></el-table-column>
+                    <el-table-column prop="sort" label="排序" width="100"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag v-if="scope.row.status==1" type="success">正常</el-tag>
+                            <el-tag v-else type="info">禁用</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="180">
+                        <template #default="scope">
+                            <el-button size="small" type="primary" @click="openModal(scope.row)">编辑</el-button>
+                            <el-button size="small" type="danger" @click="del(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+
+            <!-- Modal -->
+            <el-dialog v-model="showModal" :title="form.id ? '编辑分类' : '新增分类'" width="400px">
+                <el-form :model="form" label-width="80px">
+                    <el-form-item label="名称">
+                        <el-input v-model="form.name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="排序">
+                        <el-input v-model="form.sort" type="number" placeholder="越小越靠前"></el-input>
+                    </el-form-item>
+                    <el-form-item label="状态">
+                        <el-switch v-model="form.status" :active-value="1" :inactive-value="0"></el-switch>
+                    </el-form-item>
+                </el-form>
+                <template #footer>
+                    <el-button @click="showModal = false">取消</el-button>
+                    <el-button type="primary" @click="save">保存</el-button>
+                </template>
+            </el-dialog>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+
+        createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const list = ref([]);
+                const loading = ref(false);
+
+                const fetchData = async () => {
+                    loading.value = true;
+                    // Use window.req 
+                    const res = await window.req('categories', {}, 'GET');
+                    loading.value = false;
+                    if (res) list.value = res.data;
+                };
+
+                const showModal = ref(false);
+                const form = reactive({ id: null, name: '', sort: 0, status: 1 });
+
+                const openModal = (row = null) => {
+                    if (row) Object.assign(form, row);
+                    else Object.assign(form, { id: null, name: '', sort: 0, status: 1 });
+                    showModal.value = true;
+                };
+
+                const save = async () => {
+                    if (!form.name) return;
+                    await window.req('save_category', form);
+                    showModal.value = false;
+                    ElementPlus.ElMessage.success('保存成功');
+                    fetchData();
+                };
+
+                const del = async (row) => {
+                    if (!confirm('确定要删除吗？')) return;
+                    const res = await window.req('delete_category', { id: row.id });
+                    if (res) {
+                        ElementPlus.ElMessage.success('删除成功');
+                        fetchData();
+                    }
+                };
+
+                onMounted(() => {
+                    window.checkLogin();
+                    fetchData();
+                });
+
+                return {
+                    list, loading, fetchData,
+                    showModal, form, openModal, save, del
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>

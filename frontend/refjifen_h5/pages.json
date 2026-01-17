@@ -2,65 +2,153 @@
 	"pages": [
 		{
 			"path": "pages/index/index",
-			"style": { "navigationBarTitleText": "RefJifen Home" }
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
 		},
 		{
-			"path": "pages/mall/mall",
-			"style": { "navigationBarTitleText": "Mall" }
+			"path": "pages/my/profile",
+			"style": {
+				"navigationBarTitleText": "个人资料"
+			}
+		},
+		{
+			"path": "pages/my/pay_password",
+			"style": {
+				"navigationBarTitleText": "支付密码"
+			}
+		},
+		{
+			"path": "pages/my/balance",
+			"style": {
+				"navigationBarTitleText": "我的账户"
+			}
+		},
+		{
+			"path": "pages/my/transactions",
+			"style": {
+				"navigationBarTitleText": "资金明细"
+			}
+		},
+		{
+			"path": "pages/my/accounts",
+			"style": {
+				"navigationBarTitleText": "账号管理"
+			}
+		},
+		{
+			"path": "pages/mall/category",
+			"style": {
+				"navigationBarTitleText": "商品分类"
+			}
+		},
+		{
+			"path": "pages/mall/checkout",
+			"style": {
+				"navigationBarTitleText": "确认订单"
+			}
+		},
+		{
+			"path": "pages/mall/product",
+			"style": {
+				"navigationBarTitleText": "商品详情"
+			}
+		},
+		{
+			"path": "pages/mall/search",
+			"style": {
+				"navigationBarTitleText": "商品搜索"
+			}
+		},
+		{
+			"path": "pages/address/list",
+			"style": {
+				"navigationBarTitleText": "收货地址"
+			}
+		},
+		{
+			"path": "pages/address/edit",
+			"style": {
+				"navigationBarTitleText": "编辑地址"
+			}
 		},
 		{
 			"path": "pages/team/tree",
-			"style": { "navigationBarTitleText": "My Team" }
+			"style": {
+				"navigationBarTitleText": "我的团队"
+			}
 		},
 		{
 			"path": "pages/my/my",
-			"style": { "navigationBarTitleText": "My Profile" }
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
 		},
 		{
 			"path": "pages/login/login",
-			"style": { "navigationBarTitleText": "Login" }
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
 		},
 		{
 			"path": "pages/login/register",
-			"style": { "navigationBarTitleText": "Register" }
+			"style": {
+				"navigationBarTitleText": "注册"
+			}
+		},
+		{
+			"path": "pages/order/list",
+			"style": {
+				"navigationBarTitleText": "我的订单"
+			}
+		},
+		{
+			"path": "pages/order/detail",
+			"style": {
+				"navigationBarTitleText": "订单详情"
+			}
+		},
+		{
+			"path": "pages/order/refund",
+			"style": {
+				"navigationBarTitleText": "申请售后"
+			}
+		},
+		{
+			"path": "pages/mall/profile",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/agent/index",
+			"style": {
+				"navigationBarTitleText": "工作台"
+			}
+		},
+		{
+			"path": "pages/message/list",
+			"style": {
+				"navigationBarTitleText": "消息中心"
+			}
+		},
+		{
+			"path": "pages/message/detail",
+			"style": {
+				"navigationBarTitleText": "公告详情"
+			}
+		},
+		{
+			"path": "pages/service/chat",
+			"style": {
+				"navigationBarTitleText": "在线客服"
+			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "RefJifen",
+		"navigationBarTitleText": "新国创",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
-	},
-	"tabBar": {
-		"color": "#7A7E83",
-		"selectedColor": "#007AFF",
-		"borderStyle": "black",
-		"backgroundColor": "#ffffff",
-		"list": [
-			{
-				"pagePath": "pages/index/index",
-				"text": "Home",
-				"iconPath": "static/home.png",
-				"selectedIconPath": "static/home_active.png"
-			},
-			{
-				"pagePath": "pages/mall/mall",
-				"text": "Mall",
-				"iconPath": "static/mall.png",
-				"selectedIconPath": "static/mall_active.png"
-			},
-			{
-				"pagePath": "pages/team/tree",
-				"text": "Team",
-				"iconPath": "static/team.png",
-				"selectedIconPath": "static/team_active.png"
-			},
-			{
-				"pagePath": "pages/my/my",
-				"text": "Profile",
-				"iconPath": "static/my.png",
-				"selectedIconPath": "static/my_active.png"
-			}
-		]
 	}
 }

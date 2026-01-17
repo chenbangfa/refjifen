@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>轮播图管理 - 新国创</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="js/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://unpkg.com/@element-plus/icons-vue"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/components.js"></script>
+</head>
+
+<body>
+    <div id="app" class="main-layout">
+        <side-menu active="banners"></side-menu>
+        <div class="content">
+            <layout-header title="轮播图管理"></layout-header>
+
+            <div class="page-container">
+                <div class="header-actions" style="margin-bottom:20px; text-align:right;">
+                    <el-button type="primary" @click="dialogVisible = true">新增轮播图</el-button>
+                </div>
+
+                <el-table :data="list" style="width: 100%" v-loading="loading" border stripe>
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column label="图片" width="200">
+                        <template #default="scope">
+                            <el-image style="width: 150px; height: 80px" :src="scope.row.image" fit="cover"
+                                :preview-src-list="[scope.row.image]"></el-image>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="sort" label="排序" width="120"></el-table-column>
+                    <el-table-column label="操作">
+                        <template #default="scope">
+                            <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <!-- Add Dialog -->
+                <el-dialog v-model="dialogVisible" title="新增轮播图" width="500px">
+                    <el-form :model="form" label-width="80px">
+                        <el-form-item label="图片">
+                            <el-upload class="avatar-uploader" :action="uploadUrl" :show-file-list="false"
+                                :on-success="handleUploadSuccess" :before-upload="beforeUpload">
+                                <img v-if="form.image" :src="form.image" class="avatar"
+                                    style="width:100%; height:auto; max-height:200px; display:block;">
+                                <el-icon v-else class="avatar-uploader-icon"
+                                    style="font-size:28px; color:#8c939d; width:100px; height:100px; line-height:100px; text-align:center; border:1px dashed #d9d9d9;">
+                                    <Plus />
+                                </el-icon>
+                            </el-upload>
+                        </el-form-item>
+                        <el-form-item label="排序">
+                            <el-input v-model="form.sort" type="number" placeholder="数字越大越靠前"></el-input>
+                        </el-form-item>
+                    </el-form>
+                    <template #footer>
+                        <span class="dialog-footer">
+                            <el-button @click="dialogVisible = false">取消</el-button>
+                            <el-button type="primary" @click="submitForm">确定</el-button>
+                        </span>
+                    </template>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, reactive, toRefs, onMounted } = Vue;
+
+        const app = createApp({
+            components: { SideMenu: window.SideMenu, LayoutHeader: window.LayoutHeader },
+            setup() {
+                const state = reactive({
+                    list: [],
+                    loading: false,
+                    dialogVisible: false,
+                    form: {
+                        image: '',
+                        sort: 0
+                    },
+                    uploadUrl: window.API_BASE_URL + '?action=upload'
+                });
+
+                const loadData = async () => {
+                    state.loading = true;
+                    try {
+                        const res = await axios.get(window.API_BASE_URL + '?action=banners');
+                        if (res.data.code == 200) {
+                            state.list = res.data.data;
+                        }
+                    } catch (e) { }
+                    state.loading = false;
+                };
+
+                const handleDelete = async (row) => {
+                    if (!confirm('确定要删除这张轮播图吗？')) return;
+                    await axios.get(window.API_BASE_URL + '?action=delete_banner&id=' + row.id);
+                    loadData();
+                };
+
+                const handleUploadSuccess = (res) => {
+                    if (res.code === 200) {
+                        state.form.image = res.data.url;
+                    } else {
+                        alert(res.message);
+                    }
+                };
+
+                const beforeUpload = (file) => {
+                    const isJPG = file.type === 'image/jpeg' || file.type === 'image/png';
+                    const isLt2M = file.size / 1024 / 1024 < 2;
+
+                    if (!isJPG) {
+                        alert('Avatar picture must be JPG format!');
+                    }
+                    if (!isLt2M) {
+                        alert('Avatar picture size can not exceed 2MB!');
+                    }
+                    return isJPG && isLt2M;
+                };
+
+                const submitForm = async () => {
+                    if (!state.form.image) return alert('请上传图片');
+
+                    await axios.post(window.API_BASE_URL + '?action=add_banner', state.form);
+                    state.dialogVisible = false;
+                    state.form = { image: '', sort: 0 };
+                    loadData();
+                };
+
+                onMounted(() => {
+                    window.checkLogin(); // Ensure login check
+                    loadData();
+                });
+
+                return {
+                    ...toRefs(state),
+                    handleDelete,
+                    handleUploadSuccess,
+                    beforeUpload,
+                    submitForm
+                };
+            }
+        });
+
+        // Register Icons
+        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+            app.component(key, component)
+        }
+
+        app.use(ElementPlus).mount('#app');
+    </script>
+</body>
+
+</html>
