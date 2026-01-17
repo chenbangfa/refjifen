@@ -18,8 +18,8 @@
             </view>
         </view>
 
-        <!-- Children Connectors -->
-        <view class="children-wrapper" v-if="hasChildren || showEmpty">
+        <!-- Case 1: Children Loaded -> Show Children (and empty slots if any side is missing) -->
+        <view class="children-wrapper" v-if="childrenLoaded">
              <!-- Connector Line Vertical -->
             <view class="line-v"></view>
             <!-- Connector Line Horizontal -->
@@ -45,6 +45,35 @@
                 </view>
             </view>
         </view>
+
+        <!-- Case 2: Children NOT Loaded but Exist -> Show Drill Down Hint -->
+        <view class="expand-wrapper" v-else-if="hasRealChildren" @click="handleClick(node)">
+            <view class="line-v-short"></view>
+            <view class="expand-btn">
+                <text class="expand-icon">↓</text>
+                <text class="expand-txt">下级</text>
+            </view>
+        </view>
+
+        <!-- Case 3: No Children & Not Loaded -> Show Empty Slots -->
+        <view class="children-wrapper" v-else>
+             <view class="line-v"></view>
+             <view class="line-h"></view>
+             <view class="children-row">
+                <view class="child-col">
+                    <view class="empty-node-r">
+                        <text class="empty-plus">+</text>
+                        <text class="empty-label">左空</text>
+                    </view>
+                </view>
+                <view class="child-col">
+                    <view class="empty-node-r">
+                        <text class="empty-plus">+</text>
+                        <text class="empty-label">右空</text>
+                    </view>
+                </view>
+             </view>
+        </view>
     </view>
 </template>
 
@@ -56,23 +85,22 @@
             isRoot: { type: Boolean, default: false }
         },
         computed: {
+            // Check if children array is populated
+            childrenLoaded() {
+                return this.node.children && this.node.children.length > 0;
+            },
+            // Check if backend says "I have children" (count > 0)
+            hasRealChildren() {
+                return (this.node.child_count || 0) > 0;
+            },
             leftNode() {
                 return (this.node.children || []).find(c => c.position == 'L');
             },
             rightNode() {
                 return (this.node.children || []).find(c => c.position == 'R');
             },
-            hasChildren() {
-                return this.leftNode || this.rightNode;
-            },
             hasBoth() {
-                 return true; // Always show horizontal line logic for balanced tree look? Or only if 2 children? 
-                 // Actually, if we want to show Empty slots, we ALWAYS render 2 slots (L and R).
-                 // So we always have 2 branches.
                  return true; 
-            },
-            showEmpty() {
-                return true; // Always show structure
             }
         },
         methods: {
@@ -114,4 +142,10 @@
     .empty-node-r { width: 40px; height: 40px; border: 1px dashed #ddd; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.5); margin-top: 10px; }
     .empty-plus { color: #ccc; font-size: 16px; line-height: 1; }
     .empty-label { color: #ccc; font-size: 9px; transform: scale(0.8); }
+
+    .expand-wrapper { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+    .line-v-short { width: 1px; height: 10px; background: #ccc; }
+    .expand-btn { background: #f0faff; border: 1px solid #1890ff; padding: 2px 8px; border-radius: 10px; display: flex; align-items: center; margin-top: 0; }
+    .expand-icon { font-size: 12px; color: #1890ff; margin-right: 2px; }
+    .expand-txt { font-size: 10px; color: #1890ff; }
 </style>
