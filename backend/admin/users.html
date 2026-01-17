@@ -121,8 +121,11 @@
                                 <template #default="scope">{{ parseFloat(scope.row.balance||0).toFixed(2) }}</template>
                             </el-table-column>
                             <el-table-column label="流量分">
-                                <template #default="scope">{{ parseFloat(scope.row.traffic_points||0).toFixed(2)
-                                    }}</template>
+                                <template #default="scope">
+                                    {{ parseFloat(scope.row.traffic_points||0).toFixed(2) }}
+                                    <div v-if="scope.row.pending_points > 0" style="color:red;font-size:12px;">(待+{{
+                                        parseFloat(scope.row.pending_points).toFixed(2) }})</div>
+                                </template>
                             </el-table-column>
                             <el-table-column label="购物券">
                                 <template #default="scope">{{ parseFloat(scope.row.vouchers||0).toFixed(2) }}</template>

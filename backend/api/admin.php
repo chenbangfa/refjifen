@@ -75,7 +75,8 @@ if ($action == 'users') {
                    perf.left_total, perf.right_total,
                    (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'L') as left_directs,
                    (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'R') as right_directs,
-                   (SELECT count(*) FROM users WHERE sponsor_id = u.id) as sponsor_count
+                   (SELECT count(*) FROM users WHERE sponsor_id = u.id) as sponsor_count,
+                   (SELECT IFNULL(SUM(pending_points), 0) FROM orders WHERE user_id = u.id AND points_status = 0 AND status >= 1) as pending_points
             FROM users u 
             LEFT JOIN assets a ON u.id = a.user_id 
             LEFT JOIN users p ON u.parent_id = p.id
