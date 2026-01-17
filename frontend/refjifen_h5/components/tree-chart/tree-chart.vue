@@ -117,34 +117,34 @@
 <style>
     .tree-container { display: flex; flex-direction: column; align-items: center; }
     
-    .node-wrapper-r { padding: 10px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; }
-    .node-card-r { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 8px; display: flex; align-items: center; min-width: 120px; border: 1px solid #eee; transition: .2s; }
+    .node-wrapper-r { padding: 5px; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; }
+    .node-card-r { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 8px; display: flex; align-items: center; min-width: 140px; border: 1px solid #eee; transition: .2s; }
     .node-card-r:active { transform: scale(0.95); background: #e6f7ff; }
-    .node-card-r.is-root { border: 2px solid #1890ff; padding: 12px; min-width: 150px; }
+    .node-card-r.is-root { border: 2px solid #1890ff; padding: 12px; min-width: 160px; }
     
     .node-avatar-r { width: 30px; height: 30px; border-radius: 15px; background: #1890ff; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-right: 8px; flex-shrink: 0; }
-    .node-content { font-size: 12px; }
-    .nc-name { font-weight: bold; color: #333; }
+    .node-content { font-size: 12px; flex: 1; }
+    .nc-name { font-weight: bold; color: #333; white-space: nowrap; }
     .nc-id { color: #999; transform: scale(0.9); transform-origin: left; }
-    .nc-perf { transform: scale(0.9); transform-origin: left; margin-top: 2px; }
+    .nc-perf { transform: scale(0.9); transform-origin: left; margin-top: 2px; color:#1890ff; white-space: nowrap; }
     
-    .node-stats-r { font-size: 10px; color: #666; background: #fafafa; padding: 2px 6px; border-radius: 10px; margin-top: 4px; border: 1px solid #eee; }
+    .node-stats-r { font-size: 10px; color: #666; background: #fafafa; padding: 2px 6px; border-radius: 10px; margin-top: 4px; border: 1px solid #eee; white-space: nowrap; }
     .ns-item { margin: 0 4px; }
     
     .children-wrapper { display: flex; flex-direction: column; align-items: center; position: relative; width: 100%; }
-    .line-v { width: 1px; height: 15px; background: #ccc; }
-    .line-h { width: 50%; height: 1px; background: #ccc; position: absolute; top: 15px; left: 25%; }
+    .line-v { width: 1px; height: 10px; background: #ccc; }
+    .line-h { width: 50%; height: 1px; background: #ccc; position: absolute; top: 10px; left: 25%; }
     
-    .children-row { display: flex; justify-content: center; width: 100%; padding-top: 15px; }
-    .child-col { display: flex; flex-direction: column; align-items: center; padding: 0 5px; width: 50%; box-sizing: border-box; position: relative; }
-    .child-col::before { content: ''; position: absolute; top: -15px; left: 50%; width: 1px; height: 15px; background: #ccc; }
+    .children-row { display: flex; justify-content: center; width: 100%; padding-top: 10px; }
+    .child-col { display: flex; flex-direction: column; align-items: center; padding: 0 2px; width: 50%; box-sizing: border-box; position: relative; }
+    .child-col::before { content: ''; position: absolute; top: -10px; left: 50%; width: 1px; height: 10px; background: #ccc; }
     
-    .empty-node-r { width: 40px; height: 40px; border: 1px dashed #ddd; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.5); margin-top: 10px; }
-    .empty-plus { color: #ccc; font-size: 16px; line-height: 1; }
+    .empty-node-r { width: 36px; height: 36px; border: 1px dashed #ddd; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.5); margin-top: 5px; }
+    .empty-plus { color: #ccc; font-size: 14px; line-height: 1; }
     .empty-label { color: #ccc; font-size: 9px; transform: scale(0.8); }
 
     .expand-wrapper { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-    .line-v-short { width: 1px; height: 10px; background: #ccc; }
+    .line-v-short { width: 1px; height: 8px; background: #ccc; }
     .expand-btn { background: #f0faff; border: 1px solid #1890ff; padding: 2px 8px; border-radius: 10px; display: flex; align-items: center; margin-top: 0; }
     .expand-icon { font-size: 12px; color: #1890ff; margin-right: 2px; }
     .expand-txt { font-size: 10px; color: #1890ff; }

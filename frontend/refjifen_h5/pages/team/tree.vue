@@ -170,13 +170,13 @@
 </script>
 
 <style>
-    .container { min-height: 100vh; background: #f5f7fa; padding-top: 40px; padding-bottom: 80px; position: relative; overflow-x: auto; }
+    .container { min-height: 100%; background: #f5f7fa; padding-top: 20px; padding-bottom: 40px; position: relative; }
     
     .top-controls { position: fixed; top: 10px; right: 20px; z-index: 99; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
     .ctrl-btn { font-size: 12px; color: #1890ff; padding: 4px 10px; border: 1px solid #1890ff; border-radius: 12px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
     .back-parent { background: #e6f7ff; }
 
-    .tree-scroll-view { width: 100%; min-height: 50vh; display: flex; justify-content: center; padding: 20px 0; overflow-x: auto; }
+    .tree-scroll-view { width: 100%; display: flex; justify-content: center; padding: 10px 0; overflow-x: auto; }
     .loading-txt { color: #999; margin-top: 50px; font-size: 14px; }
 
     /* Remove old node styles as they are now in tree-chart.vue or unused */
