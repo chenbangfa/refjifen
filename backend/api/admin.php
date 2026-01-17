@@ -73,7 +73,8 @@ if ($action == 'users') {
                    p.mobile as parent_mobile, p.nickname as parent_nickname,
                    perf.left_total, perf.right_total,
                    (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'L') as left_directs,
-                   (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'R') as right_directs
+                   (SELECT count(*) FROM users WHERE parent_id = u.id AND position = 'R') as right_directs,
+                   (SELECT count(*) FROM users WHERE sponsor_id = u.id) as sponsor_count
             FROM users u 
             LEFT JOIN assets a ON u.id = a.user_id 
             LEFT JOIN users p ON u.parent_id = p.id

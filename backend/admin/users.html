@@ -72,6 +72,8 @@
                             <el-table-column prop="level" label="等级" width="80">
                                 <template #default="scope">{{ formatLevel(scope.row.level) }}</template>
                             </el-table-column>
+                            <el-table-column prop="sponsor_count" label="直推人数" width="100"
+                                align="center"></el-table-column>
                             <el-table-column label="上级(推荐人)" width="150">
                                 <template #default="scope">
                                     <div v-if="scope.row.parent_mobile">
