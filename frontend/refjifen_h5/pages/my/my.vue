@@ -15,7 +15,7 @@
                     <view class="nickname">
                         {{ user.nickname || '未设置姓名' }}
                     </view>
-                    <view class="uid">ID: {{ user.id }} <text class="tag">{{ user.is_sub_account ? '子账号' : '主账号' }}</text></view>
+                    <view class="uid">邀请码: {{ user.invite_code }} <text class="tag">{{ user.is_sub_account ? '子账号' : '主账号' }}</text></view>
                     <view class="level">等级: {{ getLevelName(user.level) }}</view>
                 </view>
             </view>
