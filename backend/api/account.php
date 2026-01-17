@@ -22,7 +22,29 @@ $user_id = $user_data['data']['id'];
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $data = json_decode(file_get_contents("php://input"));
 
+// Helper: Get Node Info
+function getNode($db, $uid)
+{
+    if (!$uid)
+        return null;
+    $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total, p.personal_performance 
+            FROM users u 
+            LEFT JOIN performance p ON u.id = p.user_id 
+            WHERE u.id = ?";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([$uid]);
+    $node = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($node) {
+        $stmt = $db->prepare("SELECT IFNULL(SUM(amount), 0) as total FROM orders WHERE user_id = ? AND zone = 'A' AND status >= 1");
+        $stmt->execute([$uid]);
+        $node['personal_performance'] = $stmt->fetch()['total'];
+    }
+    return $node;
+}
+
 if ($action == 'info') {
+    // ... existing info action ...
     // Get User Info + Assets + Performance
     $sql = "SELECT u.id, u.mobile, u.nickname, u.avatar, u.invite_code, u.level, u.position, u.is_sub_account, u.parent_id, u.is_frozen,
                    IF(u.pay_password IS NOT NULL AND u.pay_password != '', 1, 0) as has_pay_password,
@@ -230,33 +252,6 @@ if ($action == 'info') {
             echo json_encode(["message" => "Access Denied: Not your team member", "code" => 403]);
             exit;
         }
-    }
-
-    function getNode($db, $uid)
-    {
-        if (!$uid)
-            return null;
-        $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total, p.personal_performance 
-                FROM users u 
-                LEFT JOIN performance p ON u.id = p.user_id 
-                WHERE u.id = ?";
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$uid]);
-        $node = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($node) {
-            // Recalculate Personal Performance just in case or rely on performance table?
-            // Existing code calculated it live. Let's keep it live for accuracy if performance table lags
-            // BUT, user complained about slow queries before. The 'performance' table should be source of truth eventually.
-            // For now, let's stick to the existing live calc for consistency, OR use the one joined above if 'personal_performance' column exists in 'performance' table.
-            // The table schema has 'performance' table? Let's assume we keep the live calc for now as per previous code.
-
-            $stmt = $db->prepare("SELECT IFNULL(SUM(amount), 0) as total FROM orders WHERE user_id = ? AND zone = 'A' AND status >= 1");
-            $stmt->execute([$uid]);
-            $node['personal_performance'] = $stmt->fetch()['total'];
-        }
-
-        return $node;
     }
 
     $root = getNode($db, $target_id);
