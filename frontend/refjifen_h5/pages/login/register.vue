@@ -94,7 +94,7 @@
                     if (res.code == 200) {
                         uni.showToast({ title: '注册成功', icon: 'success' });
                         setTimeout(() => {
-                             uni.navigateBack();
+                             uni.reLaunch({ url: '/pages/login/login' });
                         }, 1500);
                     } else {
                         uni.showToast({ title: res.message || '注册失败', icon: 'none' });
