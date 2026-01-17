@@ -216,7 +216,7 @@ CREATE TABLE `users` (
   `avatar` varchar(255) DEFAULT NULL,
   `parent_id` int DEFAULT '0' COMMENT 'Placement Parent ID (Upline)',
   `position` enum('L','R') DEFAULT NULL COMMENT 'Position under parent: L=Left, R=Right',
-  `level` tinyint DEFAULT '0' COMMENT '0=None, 1=Gold, 2=Diamond',
+  `level` tinyint DEFAULT '0' COMMENT '0=None, 1=VIP, 2=Gold, 3=Diamond',
   `is_sub_account` tinyint(1) DEFAULT '0' COMMENT '0=Master, 1=Sub',
   `linked_mobile` varchar(20) DEFAULT NULL COMMENT 'Links Master and Sub accounts',
   `status` tinyint(1) DEFAULT '1' COMMENT '1=Active, 0=Banned',
@@ -453,3 +453,17 @@ CREATE TABLE IF NOT EXISTS `nav_items` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Home Navigation Grid';
+
+-- 2026-01-14 Chat Messages
+CREATE TABLE IF NOT EXISTS chat_messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        admin_id INT DEFAULT 0,
+        type ENUM('text', 'image') DEFAULT 'text',
+        content TEXT,
+        sender ENUM('user', 'admin') NOT NULL,
+        is_read TINYINT DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX (user_id),
+        INDEX (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

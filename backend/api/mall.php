@@ -228,12 +228,16 @@ if ($action == 'categories') {
             $grand_total = $historical_total + $total_amount_A;
 
             // Upgrade Logic based on ACCUMULATED amount
+            // Levels: 0=None, 1=VIP, 2=Gold, 3=Diamond
             $new_level = $uinfo['level'];
             if ($grand_total >= 20000) {
-                $new_level = 2;
+                $new_level = 3; // Diamond
             } elseif ($grand_total >= 4000) {
+                if ($new_level < 2)
+                    $new_level = 2; // Gold
+            } elseif ($grand_total >= 299) {
                 if ($new_level < 1)
-                    $new_level = 1;
+                    $new_level = 1; // VIP
             }
 
             if ($new_level > $uinfo['level']) {

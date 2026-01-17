@@ -114,7 +114,7 @@
         </view>
         
         <view class="menu-list">
-            <view class="menu-item" @click="goTeam">
+            <view class="menu-item" @click="goTeam" v-if="user.level > 0">
                 <view class="menu-left">
                     <svg viewBox="0 0 24 24" width="20" height="20" class="menu-icon" style="margin-right:10px;">
                         <path fill="#1890ff" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path>
@@ -126,7 +126,7 @@
                     <text class="iconfont icon-right arrow"></text>
                 </view>
             </view>
-            <view class="menu-item" @click="showInvite">
+            <view class="menu-item" @click="showInvite" v-if="user.level > 0">
                 <view class="menu-left">
                      <svg viewBox="0 0 24 24" width="20" height="20" class="menu-icon" style="margin-right:10px;">
                         <path fill="#faad14" d="M3 3h8v8H3V3zm6 6V5H5v4h4zm-6 8h8v8H3v-8zm6 6v-4H5v4h4zm8-14h8v8h-8V3zm6 6V5h-4v4h4zM13 13h2v2h-2v-2zm-2 2h2v2h-2v-2zm-2 2h2v2H9v-2zm2 2h2v2h-2v-2zm4-4h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4-4h2v2h-2v-2zm0 2h-2v2h-2v2h4v-4z"></path>
@@ -237,7 +237,7 @@
                 } catch(e) { console.error(e); }
 			},
             getLevelName(level) {
-                const map = { 0: '普通会员', 1: '金卡会员', 2: '钻卡会员' };
+                const map = { 0: '普通会员', 1: 'VIP会员', 2: '金卡会员', 3: '钻卡会员' };
                 return map[level] || '未知';
             },
             goAccounts() {
