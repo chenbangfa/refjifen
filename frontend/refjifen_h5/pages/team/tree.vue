@@ -179,6 +179,45 @@
 	}
 </script>
 
+<style>
+    .container { padding: 20px; min-height: 100vh; background: #f5f7fa; padding-top: 40px; }
+    
+    .node-wrapper { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; }
+    
+    .root-wrapper { margin-bottom: 40px; }
+    .root-wrapper::after { content: ''; position: absolute; bottom: -40px; left: 50%; width: 2px; height: 40px; background: #ccc; z-index: 1; margin-left: -1px; }
+
+    .node-card { background: #fff; border-radius: 8px; padding: 10px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; min-width: 160px; justify-content: center; }
+    .node-avatar { width: 36px; height: 36px; background: #e6f7ff; border-radius: 18px; display: flex; justify-content: center; align-items: center; margin-right: 10px; color: #1890ff; }
+    .node-info { text-align: left; }
+    .node-name { font-weight: bold; font-size: 14px; color: #333; }
+    .node-id { font-size: 12px; color: #999; }
+    
+    .node-stats { display: flex; margin-top: -10px; background: #fff; border-radius: 20px; padding: 5px 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); border: 1px solid #eee; z-index: 3; position: relative; top: 10px; }
+    .stat-box { text-align: center; padding: 0 10px; }
+    .stat-box.left { border-right: 1px solid #eee; }
+    .stat-val { color: #52c41a; font-weight: bold; font-size: 14px; }
+    .right .stat-val { color: #f5222d; }
+    .stat-lbl { font-size: 10px; color: #999; }
+    
+    /* Branches */
+    .branches { display: flex; justify-content: space-between; position: relative; padding: 0 2%; }
+    /* Connecting horizontal line */
+    .branches::before { content: ''; position: absolute; top: 0; left: 25%; width: 50%; height: 2px; background: #ccc; z-index: 1; }
+
+    .branch { width: 48%; display: flex; flex-direction: column; align-items: center; position: relative; padding-top: 30px; }
+    .branch::before { content: ''; position: absolute; top: 0; left: 50%; width: 2px; height: 30px; background: #ccc; margin-left: -1px; }
+    
+    .sub-card { min-width: 120px; padding: 10px; flex-direction: column; text-align: center; }
+    .sub-card .node-info { text-align: center; }
+    
+    .sub-stats { flex-direction: column; margin-top: 0; padding: 5px; width: 100%; box-sizing: border-box; top: 5px; min-width: 100px; }
+    .stat-row { font-size: 12px; color: #666; margin: 2px 0; display:flex; justify-content: space-between; width: 100%; }
+    
+    .empty-node { width: 60px; height: 60px; border: 2px dashed #ddd; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; }
+    .plus-icon { font-size: 20px; color: #ccc; }
+    .empty-text { font-size: 10px; color: #ccc; margin-top: 2px; }
+
     /* Pending Drawer */
     .pending-drawer {
         position: fixed; top: 120px; right: 0; 
