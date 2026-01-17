@@ -33,7 +33,7 @@
                 </view>
                 <view class="asset-item">
                     <view class="asset-value">{{ fmt(user.traffic_points) }}</view>
-                    <view class="asset-label">流量分</view>
+                    <view class="asset-label">流量分 <text v-if="user.pending_points > 0" style="color:#ff4d4f;font-size:10px;">(待+{{fmt(user.pending_points)}})</text></view>
                 </view>
                 <view class="asset-item">
                     <view class="asset-value">{{ fmt(user.vouchers) }}</view>

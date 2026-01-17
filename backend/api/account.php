@@ -69,9 +69,15 @@ if ($action == 'info') {
     $stmt->execute([$user_id]);
     $fans_count = $stmt->fetch()['count'];
 
+    // Calculate Pending Traffic Points (Orders with points_status=0 and status>=1)
+    $stmt = $db->prepare("SELECT IFNULL(SUM(pending_points), 0) FROM orders WHERE user_id = ? AND points_status = 0 AND status >= 1");
+    $stmt->execute([$user_id]);
+    $pending_points = $stmt->fetchColumn();
+
     $info['personal_performance'] = $personal_perf;
     $info['community_performance'] = $info['left_total'] + $info['right_total']; // Total Community
     $info['fans_count'] = $fans_count;
+    $info['pending_points'] = $pending_points;
 
     echo json_encode(["code" => 200, "data" => $info]);
 
