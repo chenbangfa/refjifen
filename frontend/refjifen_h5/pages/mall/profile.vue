@@ -12,7 +12,7 @@
                 </view>
                 <view class="user-info">
                     <view class="nickname">{{ user.nickname || '未设置姓名' }}</view>
-                    <view class="uid">邀请码: {{ user.invite_code }} <text class="tag">{{ user.is_sub_account ? '子账号' : '主账号' }}</text></view>
+                    <view class="uid">UID: {{ user.invite_code }} <text class="tag">{{ user.is_sub_account ? '子账号' : '主账号' }}</text></view>
                     <view class="level">等级: {{ getLevelName(user.level) }}</view>
                 </view>
             </view>
@@ -173,7 +173,7 @@
                 } catch(e) { console.error(e); }
 			},
             getLevelName(level) {
-                const map = { 0: '普通会员', 1: '金卡会员', 2: '钻卡会员' };
+                const map = { 0: '普通会员', 1: 'VIP会员', 2: '金卡会员', 3: '钻卡会员' };
                 return map[level] || '未知';
             },
             goAccounts() {
@@ -230,7 +230,7 @@
     .avatar { width: 60px; height: 60px; border-radius: 50%; background: #eee; display: block; }
     
     .nickname { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #004D40; letter-spacing: 0.5px; }
-    .uid { font-size: 13px; color: #006064; display: flex; align-items: center; opacity: 0.8; }
+    .uid { font-size: 13px; color: #fff; display: flex; align-items: center; opacity: 0.8; }
     .tag { background: rgba(0, 229, 255, 0.2); color: #006064; padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 8px; border: 1px solid rgba(0, 96, 100, 0.1); }
     .level { font-size: 12px; color: #FF6D00; margin-top: 4px; font-weight: bold; }
 

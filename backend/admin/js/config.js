@@ -35,8 +35,8 @@ window.req = async (action, data = {}, method = 'POST') => {
 // Common Formatter Utils
 window.formatUtils = {
     methodMap: { bank: '银行卡', alipay: '支付宝', wechat: '微信' },
-    levelMap: ['普通', '金卡', '钻卡'],
-    formatLevel(lv) { return ['普通', '金卡', '钻卡'][lv] || lv; },
+    levelMap: ['普通', 'VIP', '金卡', '钻卡'],
+    formatLevel(lv) { return ['普通', 'VIP', '金卡', '钻卡'][lv] || lv; },
     formatDetails(json) {
         const trans = {
             bank_name: '银行名称',

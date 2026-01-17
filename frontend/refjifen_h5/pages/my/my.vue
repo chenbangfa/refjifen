@@ -15,7 +15,7 @@
                     <view class="nickname">
                         {{ user.nickname || '未设置姓名' }}
                     </view>
-                    <view class="uid">邀请码: {{ user.invite_code }} <text class="tag">{{ user.is_sub_account ? '子账号' : '主账号' }}</text></view>
+                    <view class="uid">UID: {{ user.invite_code }} <text class="tag">{{ user.is_sub_account ? '子账号' : '主账号' }}</text></view>
                     <view class="level">等级: {{ getLevelName(user.level) }}</view>
                 </view>
             </view>
@@ -337,7 +337,7 @@
     .avatar { width: 100%; height: 100%; border-radius: 50%; background: #eee; display: block; object-fit: cover; }
     
     .nickname { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #004D40; letter-spacing: 0.5px; }
-    .uid { font-size: 13px; color: #006064; display: flex; align-items: center; opacity: 0.8; }
+    .uid { font-size: 13px; color: #fff; display: flex; align-items: center; opacity: 0.8; }
     .tag { background: rgba(0, 229, 255, 0.2); color: #006064; padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 8px; border: 1px solid rgba(0, 96, 100, 0.1); }
     .tag.frozen { background: rgba(255, 0, 0, 0.1); color: #ff0000; border-color: rgba(255, 0, 0, 0.2); }
     .level { font-size: 12px; color: #FF6D00; margin-top: 4px; font-weight: bold; }
@@ -405,7 +405,7 @@
     .avatar-area { display: flex; align-items: center; flex: 1; }
     .avatar { width: 60px; height: 60px; border-radius: 30px; background: #eee; }
     .nickname { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #333; }
-    .uid { font-size: 12px; color: #888; display: flex; align-items: center; }
+    .uid { font-size: 12px; color: #fff; display: flex; align-items: center; }
     .tag { background: #E8F5EB; color: #07C160; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; }
     .level { font-size: 12px; color: #FF9800; margin-top: 2px; }
     .arrow-right { color: #ccc; margin-left: 10px; }
