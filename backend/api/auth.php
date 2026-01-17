@@ -84,9 +84,9 @@ if ($action == 'register') {
             $user_id = $db->lastInsertId();
 
             // Initialize Assets
-            $db->prepare("INSERT INTO assets (user_id) VALUES (?)")->execute([$user_id]);
+            $db->prepare("INSERT IGNORE INTO assets (user_id) VALUES (?)")->execute([$user_id]);
             // Initialize Performance
-            $db->prepare("INSERT INTO performance (user_id) VALUES (?)")->execute([$user_id]);
+            $db->prepare("INSERT IGNORE INTO performance (user_id) VALUES (?)")->execute([$user_id]);
 
             echo json_encode(["message" => "Registration successful", "code" => 200, "user_id" => $user_id]);
         } else {
