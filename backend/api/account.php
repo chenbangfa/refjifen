@@ -27,7 +27,7 @@ function getNode($db, $uid)
 {
     if (!$uid)
         return null;
-    $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total 
+    $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, u.parent_id, p.left_total, p.right_total 
             FROM users u 
             LEFT JOIN performance p ON u.id = p.user_id 
             WHERE u.id = ?";
@@ -289,7 +289,7 @@ if ($action == 'info') {
         return $node;
     }
 
-    $tree = buildTree($db, $target_id, 0, 10);
+    $tree = buildTree($db, $target_id, 0, 2);
 
     echo json_encode([
         "code" => 200,
