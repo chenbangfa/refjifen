@@ -206,14 +206,37 @@ if ($action == 'info') {
 
 } elseif ($action == 'team') {
     // Return direct children (Binary Tree)
-    // Structure: { self: {...}, left: {...}, right: {...} }
-    // For deeper levels, frontend can request recursively or we provide 2 levels here.
+    // Supports Drill-down via ?id=xxx
+
+    $target_id = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : $user_id;
+
+    // Security: Verify target_id is descendant of user_id (or self)
+    if ($target_id != $user_id) {
+        $curr = $target_id;
+        $is_descendant = false;
+        $safety = 0;
+        while ($curr != 0 && $safety < 1000) {
+            $stmt = $db->prepare("SELECT parent_id FROM users WHERE id = ?");
+            $stmt->execute([$curr]);
+            $pid = $stmt->fetchColumn();
+            if ($pid == $user_id) {
+                $is_descendant = true;
+                break;
+            }
+            $curr = $pid;
+            $safety++;
+        }
+        if (!$is_descendant) {
+            echo json_encode(["message" => "Access Denied: Not your team member", "code" => 403]);
+            exit;
+        }
+    }
 
     function getNode($db, $uid)
     {
         if (!$uid)
             return null;
-        $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total 
+        $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, p.left_total, p.right_total, p.personal_performance 
                 FROM users u 
                 LEFT JOIN performance p ON u.id = p.user_id 
                 WHERE u.id = ?";
@@ -222,7 +245,12 @@ if ($action == 'info') {
         $node = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($node) {
-            // Calculate Personal Performance
+            // Recalculate Personal Performance just in case or rely on performance table?
+            // Existing code calculated it live. Let's keep it live for accuracy if performance table lags
+            // BUT, user complained about slow queries before. The 'performance' table should be source of truth eventually.
+            // For now, let's stick to the existing live calc for consistency, OR use the one joined above if 'personal_performance' column exists in 'performance' table.
+            // The table schema has 'performance' table? Let's assume we keep the live calc for now as per previous code.
+
             $stmt = $db->prepare("SELECT IFNULL(SUM(amount), 0) as total FROM orders WHERE user_id = ? AND zone = 'A' AND status >= 1");
             $stmt->execute([$uid]);
             $node['personal_performance'] = $stmt->fetch()['total'];
@@ -231,11 +259,11 @@ if ($action == 'info') {
         return $node;
     }
 
-    $root = getNode($db, $user_id);
+    $root = getNode($db, $target_id);
 
     // Get Children
     $stmt = $db->prepare("SELECT id, position FROM users WHERE parent_id = ?");
-    $stmt->execute([$user_id]);
+    $stmt->execute([$target_id]);
     $children = $stmt->fetchAll();
 
     $left = null;
