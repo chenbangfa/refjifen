@@ -34,8 +34,9 @@
             <view class="quick-item" @click="doCheckin">
                 <view class="quick-left">
                     <view class="quick-title">每日签到</view>
-                    <view class="quick-desc" v-if="!user.checked_in">领取今日奖励</view>
-                    <view class="quick-desc" v-else>今日已签到</view>
+                    <view class="quick-desc" v-if="user.checked_in">今日已签到</view>
+                    <view class="quick-desc" v-else-if="user.level >= 2">领取今日奖励</view>
+                    <view class="quick-desc" v-else style="color:#999">需金/钻会员</view>
                 </view>
                 <svg viewBox="0 0 24 24" width="48" height="48" class="quick-icon">
                     <defs>

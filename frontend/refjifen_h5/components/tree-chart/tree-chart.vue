@@ -51,7 +51,7 @@
             <view class="line-v-short"></view>
             <view class="expand-btn">
                 <text class="expand-icon">↓</text>
-                <text class="expand-txt">下级</text>
+                <text class="expand-txt">查看团队</text>
             </view>
         </view>
 
