@@ -24,7 +24,7 @@ $data = json_decode(file_get_contents("php://input"));
 
 if ($action == 'info') {
     // Get User Info + Assets + Performance
-    $sql = "SELECT u.id, u.mobile, u.nickname, u.avatar, u.level, u.position, u.is_sub_account, u.parent_id, u.is_frozen,
+    $sql = "SELECT u.id, u.mobile, u.nickname, u.avatar, u.invite_code, u.level, u.position, u.is_sub_account, u.parent_id, u.is_frozen,
                    IF(u.pay_password IS NOT NULL AND u.pay_password != '', 1, 0) as has_pay_password,
                    a.balance, a.traffic_points, a.vouchers,
                    p.left_total, p.right_total

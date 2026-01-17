@@ -27,38 +27,60 @@ if ($action == 'register') {
     }
 
     // 3. Check Invite Code (Parent ID)
-    // For MVP, invite_code IS the parent_id.
-    $stmt = $db->prepare("SELECT id FROM users WHERE id = ?");
-    $stmt->execute([$data->invite_code]);
-    if ($stmt->rowCount() == 0) {
-        // Root node exception: if DB is empty, allow invite_code=0
+    // New Logic: Lookup user by invite_code
+    $sponsor_id = 0;
+
+    if ($data->invite_code == '0') {
+        // Root node exception
         $count = $db->query("SELECT count(*) FROM users")->fetchColumn();
-        if ($count > 0 || $data->invite_code != 0) {
+        if ($count > 0) {
             echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
             exit;
         }
+    } else {
+        $stmt = $db->prepare("SELECT id FROM users WHERE invite_code = ?");
+        $stmt->execute([$data->invite_code]);
+        $parent = $stmt->fetch();
+        if (!$parent) {
+            echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
+            exit;
+        }
+        $sponsor_id = $parent['id'];
     }
 
     // 4. Create User
     $password_hash = password_hash($data->password, PASSWORD_BCRYPT);
 
+    // Generate New Invite Code
+    $new_invite_code = '';
+    while (true) {
+        $new_invite_code = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        $stmt = $db->prepare("SELECT id FROM users WHERE invite_code = ?");
+        $stmt->execute([$new_invite_code]);
+        if ($stmt->rowCount() == 0)
+            break;
+    }
+
     // Auto-assign position logic
     // Default is Left
     $position = 'L';
+    $parent_id = $sponsor_id; // Default placement under sponsor
 
     // Check if Parent already has a Left child
-    $stmt = $db->prepare("SELECT id FROM users WHERE parent_id = ? AND position = 'L'");
-    $stmt->execute([$data->invite_code]);
-    if ($stmt->rowCount() > 0) {
-        // Left is occupied, place in Right
-        $position = 'R';
+    if ($parent_id > 0) {
+        $stmt = $db->prepare("SELECT id FROM users WHERE parent_id = ? AND position = 'L'");
+        $stmt->execute([$parent_id]);
+        if ($stmt->rowCount() > 0) {
+            // Left is occupied, place in Right
+            $position = 'R';
+        }
     }
 
-    $sql = "INSERT INTO users (mobile, password, parent_id, position, is_sub_account) VALUES (?, ?, ?, ?, 0)";
+    $sql = "INSERT INTO users (mobile, password, invite_code, sponsor_id, parent_id, position, is_sub_account) VALUES (?, ?, ?, ?, ?, ?, 0)";
     $stmt = $db->prepare($sql);
 
     try {
-        if ($stmt->execute([$data->mobile, $password_hash, $data->invite_code, $position])) {
+        if ($stmt->execute([$data->mobile, $password_hash, $new_invite_code, $sponsor_id, $parent_id, $position])) {
             $user_id = $db->lastInsertId();
 
             // Initialize Assets
@@ -125,15 +147,13 @@ if ($action == 'register') {
 
     // Improved Logic: Just get all users with this mobile number
     // This handles "One Mobile, Multiple IDs" correctly without relying on linked_mobile
-    // Removed invite_code from SELECT as it doesn't exist in DB schema
-    $stmt = $db->prepare("SELECT id, mobile, nickname, is_sub_account, level FROM users WHERE mobile = ? ORDER BY id ASC");
+    $stmt = $db->prepare("SELECT id, mobile, nickname, is_sub_account, level, invite_code FROM users WHERE mobile = ? ORDER BY id ASC");
     $stmt->execute([$mobile]);
     $all_accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $users = [];
     foreach ($all_accounts as $acc) {
         $acc['is_current'] = ($acc['id'] == $current_id);
-        $acc['invite_code'] = $acc['id']; // Alias ID as invite_code
         $users[] = $acc;
     }
 

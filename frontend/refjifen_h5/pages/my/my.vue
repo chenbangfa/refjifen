@@ -134,7 +134,7 @@
                     <text>我的邀请码</text>
                 </view>
                 <view class="menu-right">
-                    <text class="menu-info">{{ user.id }}</text>
+                    <text class="menu-info">{{ user.invite_code }}</text>
                     <text class="iconfont icon-right arrow"></text>
                 </view>
             </view>
@@ -181,7 +181,7 @@
             <view class="modal-content" @click.stop>
                 <view class="modal-title">邀请好友注册</view>
                 <image class="qr-img" :src="qrCodeUrl" mode="aspectFit"></image>
-                <view class="invite-code">我的邀请码: <text style="color:#07C160;font-size:20px;">{{ user.id }}</text></view>
+                <view class="invite-code">我的邀请码: <text style="color:#07C160;font-size:20px;">{{ user.invite_code }}</text></view>
                 <view class="modal-btn" @click="copyLink">复制注册链接</view>
             </view>
         </view>
@@ -231,7 +231,7 @@
                     const res = await uni.$api('account.php?action=info');
                     if(res.code == 200) {
                         this.user = res.data;
-                        const link = `http://ref.tajian.cc/#/pages/login/register?invite_code=${this.user.id}`;
+                        const link = `http://ref.tajian.cc/#/pages/login/register?invite_code=${this.user.invite_code}`;
                         this.qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(link)}&size=300`;
                     }
                 } catch(e) { console.error(e); }
@@ -290,7 +290,7 @@
             },
             showInvite() {
                 this.showInviteModal = true;
-                const link = `http://ref.tajian.cc/#/pages/login/register?invite_code=${this.user.id}`;
+                const link = `http://ref.tajian.cc/#/pages/login/register?invite_code=${this.user.invite_code}`;
                 this.qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(link)}&size=300`;
             },
             closeInvite() {
@@ -301,7 +301,7 @@
                 uni.reLaunch({ url: '/pages/login/login' });
             },
             copyLink() {
-                 const link = `http://ref.tajian.cc/#/pages/login/register?invite_code=${this.user.id}`;
+                 const link = `http://ref.tajian.cc/#/pages/login/register?invite_code=${this.user.invite_code}`;
                  uni.setClipboardData({
                      data: link,
                      success: () => uni.showToast({title:'复制成功'})
@@ -403,7 +403,7 @@
 <style>
     .user-card { position: relative; background: #fff; padding: 20px; display: flex; align-items: center; justify-content: space-between; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .avatar-area { display: flex; align-items: center; flex: 1; }
-    .avatar { width: 60px; height: 60px; border-radius: 30px; margin-right: 15px; background: #eee; }
+    .avatar { width: 60px; height: 60px; border-radius: 30px; background: #eee; }
     .nickname { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #333; }
     .uid { font-size: 12px; color: #888; display: flex; align-items: center; }
     .tag { background: #E8F5EB; color: #07C160; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; }

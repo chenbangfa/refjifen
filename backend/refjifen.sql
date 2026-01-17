@@ -214,6 +214,8 @@ CREATE TABLE `users` (
   `pay_password` varchar(255) DEFAULT NULL COMMENT '6-digit payment pin hash',
   `nickname` varchar(50) DEFAULT NULL,
   `avatar` varchar(255) DEFAULT NULL,
+  `invite_code` varchar(6) DEFAULT NULL COMMENT 'Random 6-digit Invite Code',
+  `sponsor_id` int DEFAULT '0' COMMENT 'Direct Referrer ID',
   `parent_id` int DEFAULT '0' COMMENT 'Placement Parent ID (Upline)',
   `position` enum('L','R') DEFAULT NULL COMMENT 'Position under parent: L=Left, R=Right',
   `level` tinyint DEFAULT '0' COMMENT '0=None, 1=VIP, 2=Gold, 3=Diamond',
