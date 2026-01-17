@@ -201,6 +201,12 @@
     
     .banner { width: 100%; height: 180px; background: #fff; border-radius: 8px; overflow: hidden; margin-bottom: 10px; } /* Rounded corners for banner to match layout? User didn't ask but "inconsistent width" implies it might need to match card curvature? */
     .banner-img { width: 100%; height: 100%; }
+
+    /* Navigation Grid */
+    .nav-grid { display: flex; flex-wrap: wrap; background: #fff; padding: 15px 0 5px 0; margin-bottom: 15px; border-radius: 12px; }
+    .nav-item { width: 20%; display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+    .nav-icon { width: 44px; height: 44px; margin-bottom: 6px; }
+    .nav-name { font-size: 12px; color: #333; }
     
     .zone-section { background: #fff; border-radius: 12px; margin-bottom: 15px; padding: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow: hidden; }
     
