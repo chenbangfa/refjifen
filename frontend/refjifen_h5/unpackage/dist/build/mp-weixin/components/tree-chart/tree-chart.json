@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "tree-chart": "/components/tree-chart/tree-chart"
+  },
+  "component": true
+}

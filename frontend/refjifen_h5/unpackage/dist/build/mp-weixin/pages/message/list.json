@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "消息中心",
+  "usingComponents": {
+    "tab-bar": "/components/tab-bar/tab-bar"
+  }
+}

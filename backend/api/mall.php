@@ -237,7 +237,7 @@ if ($action == 'categories') {
             } elseif ($grand_total >= 4000) {
                 if ($new_level < 2)
                     $new_level = 2; // Gold
-            } elseif ($grand_total >= 299) {
+            } elseif ($grand_total >= 400) {
                 if ($new_level < 1)
                     $new_level = 1; // VIP
             }

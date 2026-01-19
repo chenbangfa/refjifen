@@ -1,22 +1,25 @@
 {
-    "name": "RefJifen",
-    "appid": "__UNI__9C0E9FB",
-    "description": "新国创",
-    "versionName": "1.0.2",
-    "versionCode": "100",
-    "transformPx": false,
-    "app-plus": {
-        "modules": {}
+    "name" : "RefJifen",
+    "appid" : "__UNI__9C0E9FB",
+    "description" : "新国创",
+    "versionName" : "1.0.2",
+    "versionCode" : "100",
+    "transformPx" : false,
+    "app-plus" : {
+        "modules" : {}
     },
-    "h5": {
-        "title": "新国创",
-        "router": {
-            "mode": "hash",
-            "base": "./"
+    "h5" : {
+        "title" : "新国创",
+        "router" : {
+            "mode" : "hash",
+            "base" : "./"
         },
-        "devServer": {
-            "port": 8080,
-            "disableHostCheck": true
+        "devServer" : {
+            "port" : 8080,
+            "disableHostCheck" : true
         }
+    },
+    "mp-weixin" : {
+        "appid" : "wx298aa1b093336d84"
     }
 }

@@ -1,0 +1,1 @@
+<view class="container"><view class="content-box"><view class="title">{{article.title}}</view><view class="date">{{article.created_at}}</view><view class="line"></view><view class="rich-content"><rich-text nodes="{{$root.m0}}"></rich-text></view></view></view>

@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我的团队",
+  "usingComponents": {
+    "tree-chart": "/components/tree-chart/tree-chart",
+    "tab-bar": "/components/tab-bar/tab-bar"
+  }
+}

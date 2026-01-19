@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/my/profile",
+    "pages/my/pay_password",
+    "pages/my/balance",
+    "pages/my/transactions",
+    "pages/my/accounts",
+    "pages/mall/category",
+    "pages/mall/checkout",
+    "pages/mall/product",
+    "pages/mall/search",
+    "pages/address/list",
+    "pages/address/edit",
+    "pages/team/tree",
+    "pages/my/my",
+    "pages/login/login",
+    "pages/login/register",
+    "pages/order/list",
+    "pages/order/detail",
+    "pages/order/refund",
+    "pages/mall/profile",
+    "pages/agent/index",
+    "pages/message/list",
+    "pages/message/detail",
+    "pages/service/chat"
+  ],
+  "subPackages": [],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "新国创",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "usingComponents": {}
+}

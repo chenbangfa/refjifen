@@ -13,7 +13,7 @@ $data = json_decode(file_get_contents("php://input"));
 
 if ($action == 'register') {
     // 1. Validate Input
-    if (!isset($data->mobile) || !isset($data->password) || !isset($data->invite_code)) {
+    if (!isset($data->mobile) || !isset($data->password)) {
         echo json_encode(["message" => "Incomplete data", "code" => 400]);
         exit;
     }
@@ -30,22 +30,24 @@ if ($action == 'register') {
     // New Logic: Lookup user by invite_code
     $sponsor_id = 0;
 
-    if ($data->invite_code == '0') {
-        // Root node exception
-        $count = $db->query("SELECT count(*) FROM users")->fetchColumn();
-        if ($count > 0) {
-            echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
-            exit;
+    if (!empty($data->invite_code)) {
+        if ($data->invite_code == '0') {
+            // Root node exception
+            $count = $db->query("SELECT count(*) FROM users")->fetchColumn();
+            if ($count > 0) {
+                echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
+                exit;
+            }
+        } else {
+            $stmt = $db->prepare("SELECT id FROM users WHERE invite_code = ?");
+            $stmt->execute([$data->invite_code]);
+            $parent = $stmt->fetch();
+            if (!$parent) {
+                echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
+                exit;
+            }
+            $sponsor_id = $parent['id'];
         }
-    } else {
-        $stmt = $db->prepare("SELECT id FROM users WHERE invite_code = ?");
-        $stmt->execute([$data->invite_code]);
-        $parent = $stmt->fetch();
-        if (!$parent) {
-            echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
-            exit;
-        }
-        $sponsor_id = $parent['id'];
     }
 
     // 4. Create User

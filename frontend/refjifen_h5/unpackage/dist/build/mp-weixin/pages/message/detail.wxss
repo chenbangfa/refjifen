@@ -1,0 +1,1 @@
+.container{background-color:#fff;min-height:100vh;padding:20px!important}.title{font-size:20px;font-weight:700;color:#333;margin-bottom:10px}.date{font-size:14px;color:#999;margin-bottom:15px}.line{height:1px;background:#eee;margin-bottom:20px}.rich-content{font-size:16px;line-height:1.6;color:#333}
