@@ -14,7 +14,7 @@ $data = json_decode(file_get_contents("php://input"));
 if ($action == 'register') {
     // 1. Validate Input
     if (!isset($data->mobile) || !isset($data->password)) {
-        echo json_encode(["message" => "Incomplete data", "code" => 400]);
+        echo json_encode(["message" => "请填写完整信息", "code" => 400]);
         exit;
     }
 
@@ -22,7 +22,7 @@ if ($action == 'register') {
     $stmt = $db->prepare("SELECT id FROM users WHERE mobile = ?");
     $stmt->execute([$data->mobile]);
     if ($stmt->rowCount() > 0) {
-        echo json_encode(["message" => "Mobile already registered", "code" => 409]);
+        echo json_encode(["message" => "该手机号已注册", "code" => 409]);
         exit;
     }
 
@@ -35,7 +35,7 @@ if ($action == 'register') {
             // Root node exception
             $count = $db->query("SELECT count(*) FROM users")->fetchColumn();
             if ($count > 0) {
-                echo json_encode(["message" => "Invalid Invite Code", "code" => 400]);
+                echo json_encode(["message" => "邀请码无效", "code" => 400]);
                 exit;
             }
         } else {
@@ -62,6 +62,10 @@ if ($action == 'register') {
         if ($stmt->rowCount() == 0)
             break;
     }
+
+    // Initialize placement defaults (for users without invite code)
+    $parent_id = 0;
+    $position = null;
 
     // Check Placement Availability
     if ($sponsor_id > 0) {
@@ -100,12 +104,12 @@ if ($action == 'register') {
             // Initialize Performance
             $db->prepare("INSERT IGNORE INTO performance (user_id) VALUES (?)")->execute([$user_id]);
 
-            echo json_encode(["message" => "Registration successful", "code" => 200, "user_id" => $user_id]);
+            echo json_encode(["message" => "注册成功", "code" => 200, "user_id" => $user_id]);
         } else {
-            echo json_encode(["message" => "Unable to register", "code" => 503]);
+            echo json_encode(["message" => "注册失败，请稍后重试", "code" => 503]);
         }
     } catch (PDOException $e) {
-        echo json_encode(["message" => "DB Error: " . $e->getMessage(), "code" => 500]);
+        echo json_encode(["message" => "数据库错误: " . $e->getMessage(), "code" => 500]);
     }
 
 } elseif ($action == 'login') {

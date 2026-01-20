@@ -35,7 +35,7 @@
                     <view class="icon-box">
                          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#999" d="M3 3h8v8H3V3zm6 6V5H5v4h4zm-6 8h8v8H3v-8zm6 6v-4H5v4h4zm8-14h8v8h-8V3zm6 6V5h-4v4h4zM13 13h2v2h-2v-2zm-2 2h2v2h-2v-2zm-2 2h2v2H9v-2zm2 2h2v2h-2v-2zm4-4h2v2h-2v-2zm2 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm4-4h2v2h-2v-2zm0 2h-2v2h-2v2h4v-4z"></path></svg>
                     </view>
-                    <input class="input" v-model="invite_code" type="number" placeholder="请输入邀请码 (选填)" placeholder-class="placeholder" :disabled="invite_disabled" />
+                    <input class="input" v-model="invite_code" type="number" placeholder="请输入邀请码" placeholder-class="placeholder" :disabled="invite_disabled" />
                 </view>
 
                 <view class="btn-area">
