@@ -110,6 +110,7 @@
                     <el-table-column label="操作" width="100" fixed="right">
                         <template #default="scope">
                             <el-button size="small" type="primary" link @click="openModal(scope.row)">编辑</el-button>
+                            <el-button size="small" type="danger" link @click="deleteRow(scope.row)">删除</el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -386,6 +387,13 @@
                     fetchData();
                 };
 
+                const deleteRow = async (row) => {
+                    if (!confirm('确定删除商品 "' + row.title + '" 吗？')) return;
+                    await window.req('delete_product', { id: row.id });
+                    ElementPlus.ElMessage.success('删除成功');
+                    fetchData();
+                };
+
                 onMounted(() => {
                     window.checkLogin();
                     fetchCategories();
@@ -395,7 +403,7 @@
                 return {
                     list, loading, categories, filters, fetchData,
                     page, limit, total, handlePageChange,
-                    showModal, form, openModal, save,
+                    showModal, form, openModal, save, deleteRow,
                     initQuill, destroyQuill, insertImagesToDesc,
                     fileList, handleUploadSuccess, handleRemove, beforeAvatarUpload,
                     handleQuillUpload

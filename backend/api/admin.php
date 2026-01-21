@@ -440,6 +440,14 @@ if ($action == 'users') {
     }
     json_out(200, "Saved");
 
+} elseif ($action == 'delete_product') {
+    if (!isset($data->id) || !$data->id)
+        json_out(400, "ID required");
+
+    $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
+    $stmt->execute([$data->id]);
+    json_out(200, "Deleted");
+
 } elseif ($action == 'ship_order') {
     if (!isset($data->id) || !isset($data->tracking_number))
         json_out(400, "Missing data");
