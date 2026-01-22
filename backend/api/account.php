@@ -27,7 +27,7 @@ function getNode($db, $uid)
 {
     if (!$uid)
         return null;
-    $sql = "SELECT u.id, u.nickname, u.mobile, u.level, u.position, u.parent_id, p.left_total, p.right_total,
+    $sql = "SELECT u.id, u.nickname, u.mobile, u.invite_code, u.level, u.position, u.parent_id, p.left_total, p.right_total,
             (SELECT COUNT(*) FROM users WHERE parent_id = u.id) as child_count 
             FROM users u 
             LEFT JOIN performance p ON u.id = p.user_id 

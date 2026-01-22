@@ -7,8 +7,8 @@
                     <text class="avatar-txt">用户</text>
                 </view>
                 <view class="node-content">
-                    <view class="nc-name">{{ node.nickname || '用户'+node.id }}</view>
-                    <view class="nc-id">ID: {{ node.id }}</view>
+                    <view class="nc-name">{{ node.nickname || '用户'+(node.invite_code||node.id) }}</view>
+                    <view class="nc-id">UID: {{ node.invite_code }}</view>
                     <view class="nc-perf" style="color:#1890ff">个人: {{ fmt(node.personal_performance) }}</view>
                 </view>
             </view>
