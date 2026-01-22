@@ -67,7 +67,7 @@
                         <template #default="scope">
                             <div v-for="(val, key) in parseJSON(scope.row.details)" :key="key"
                                 style="font-size:12px; line-height:1.6;">
-                                <div v-if="['image', 'image_url'].includes(key)">
+                                <div v-if="['image', 'image_url'].includes(key) && val">
                                     <span style="color:#999;">{{ formatKey(key) }}: </span>
                                     <el-image
                                         style="width: 30px; height: 30px; vertical-align: middle; border-radius:4px; cursor:pointer;"
@@ -273,7 +273,9 @@
                             realname: '真实姓名',
                             account_number: '账号',
                             image: '收款码',
-                            image_url: '收款码'
+                            image_url: '收款码',
+                            original_amount: '申请金额',
+                            fee_rate: '费率'
                         };
                         return trans[key] || key;
                     },
