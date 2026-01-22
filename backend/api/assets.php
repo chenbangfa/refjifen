@@ -174,17 +174,26 @@ if ($action == 'transfer') {
             exit;
         }
 
-        // Deduct Balance
+        // Deduct Balance (Full Amount)
         $stmt = $db->prepare("UPDATE assets SET balance = balance - ? WHERE user_id = ?");
         $stmt->execute([$amount, $user_id]);
 
-        // Insert Withdrawal Request
-        $stmt = $db->prepare("INSERT INTO withdrawals (user_id, amount, method, details, status) VALUES (?, ?, ?, ?, 0)");
-        $stmt->execute([$user_id, $amount, $data->method, $details]);
+        // Calculate Actual Amount (minus 8% fee)
+        $actual_amount = $amount * 0.92;
 
-        // Log Finance
+        // Add info to details
+        $detailsArr = json_decode($details, true);
+        $detailsArr['original_amount'] = $amount;
+        $detailsArr['fee_rate'] = '8%';
+        $detailsJson = json_encode($detailsArr, JSON_UNESCAPED_UNICODE);
+
+        // Insert Withdrawal Request (Actual Amount)
+        $stmt = $db->prepare("INSERT INTO withdrawals (user_id, amount, method, details, status) VALUES (?, ?, ?, ?, 0)");
+        $stmt->execute([$user_id, $actual_amount, $data->method, $detailsJson]);
+
+        // Log Finance (Full Amount)
         $stmt = $db->prepare("INSERT INTO logs_finance (user_id, type, asset_type, amount, before_val, after_val, memo) VALUES (?, 'withdraw', 'balance', ?, ?, ?, ?)");
-        $stmt->execute([$user_id, $amount, $balance, $balance - $amount, "申请提现"]);
+        $stmt->execute([$user_id, $amount, $balance, $balance - $amount, "申请提现(扣除手续费8%)"]);
 
         $db->commit();
         echo json_encode(["message" => "提现申请提交成功", "code" => 200]);
