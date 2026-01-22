@@ -12,7 +12,7 @@
 
         <!-- 功能入口 -->
         <view class="menu-list">
-             <view class="menu-item" @click="showTransfer = true">
+             <view class="menu-item" @click="showTransfer = true" v-if="false">
                 <view class="menu-left">
                      <text class="iconfont icon-swap menu-icon" style="color:#1890ff;"></text>
                     <text>站内转账</text>
@@ -56,6 +56,7 @@
                 </view>
                 
                 <input class="input" v-model="withdrawForm.amount" placeholder="提现金额 (100的倍数)" type="number" />
+                <view style="font-size:12px;color:#f56c6c;margin-bottom:15px;">注：提现收取8%手续费，即提现100元实际到账92元</view>
                 
                 <template v-if="withdrawForm.method == 'bank'">
                     <input class="input" v-model="withdrawForm.details.realname" placeholder="收款人姓名" />

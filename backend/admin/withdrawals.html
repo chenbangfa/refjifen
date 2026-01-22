@@ -59,7 +59,13 @@
                 <el-table :data="list" border stripe v-loading="loading">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="nickname" label="申请人"></el-table-column>
-                    <el-table-column prop="amount" label="金额"></el-table-column>
+                    <el-table-column label="金额" width="180">
+                        <template #default="scope">
+                            <div>申请: {{ scope.row.amount }}</div>
+                            <div style="color:#f56c6c;font-size:12px;">应付: {{ (scope.row.amount * 0.92).toFixed(2) }}
+                            </div>
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="method" label="方式">
                         <template #default="scope">{{ methodMap[scope.row.method] || scope.row.method }}</template>
                     </el-table-column>
