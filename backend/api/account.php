@@ -210,11 +210,21 @@ if ($action == 'info') {
 
     $db->beginTransaction();
     try {
+        // Generate New Invite Code
+        $new_invite_code = '';
+        while (true) {
+            $new_invite_code = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $stmt = $db->prepare("SELECT id FROM users WHERE invite_code = ?");
+            $stmt->execute([$new_invite_code]);
+            if ($stmt->rowCount() == 0)
+                break;
+        }
+
         // Create Sub User
-        $stmt = $db->prepare("INSERT INTO users (mobile, password, parent_id, position, is_sub_account, linked_mobile) VALUES (?, ?, ?, ?, 1, ?)");
+        $stmt = $db->prepare("INSERT INTO users (mobile, password, invite_code, parent_id, position, is_sub_account, linked_mobile) VALUES (?, ?, ?, ?, ?, 1, ?)");
         // Link Sub -> Master's mobile (assuming master's mobile is known, strictly we should query it)
         $master_mobile = $user_data['data']['mobile'];
-        $stmt->execute([$sub_mobile, $password_hash, $user_id, $position, $master_mobile]);
+        $stmt->execute([$sub_mobile, $password_hash, $new_invite_code, $user_id, $position, $master_mobile]);
         $sub_id = $db->lastInsertId();
 
         // Update Master -> Linked Sub
