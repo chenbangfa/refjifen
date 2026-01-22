@@ -17,7 +17,7 @@
                 </view>
                 <view class="log-right">
                     <view :class="['log-amount', getAmountClass(item.type)]">
-                        {{ (item.amount > 0 ? '+' : '') + parseFloat(item.amount).toFixed(2) }}
+                        {{ (getAmountClass(item.type) == 'plus' ? '+' : '-') + parseFloat(item.amount).toFixed(2) }}
                     </view>
                     <view class="log-memo">{{ item.memo }}</view>
                 </view>
@@ -62,17 +62,19 @@
                     'buy': '消费',
                     'transfer_in': '转入',
                     'transfer_out': '转出',
-                    'withdraw': '提现'
+                    'withdraw': '提现',
+                    'admin_recharge': '管理员充值',
+                    'admin_deduct': '管理员扣除'
                 };
                 let label = map[type] || type;
                 if(assetType) {
-                    const amap = {'balance':'(余额)', 'traffic_points':'(流量分)', 'vouchers':'(券)'};
+                    const amap = {'balance':'(余额)', 'traffic_points':'(流量分)', 'vouchers':'(购物券)'};
                     if(amap[assetType]) label += amap[assetType];
                 }
                 return label;
             },
             getAmountClass(type) {
-                return (type == 'recharge' || type == 'release' || type == 'transfer_in') ? 'plus' : 'minus';
+                return (type == 'recharge' || type == 'release' || type == 'transfer_in' || type == 'admin_recharge') ? 'plus' : 'minus';
             }
 		}
 	}
