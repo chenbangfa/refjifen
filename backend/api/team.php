@@ -36,15 +36,29 @@ if ($action == 'pending_list') {
 } elseif ($action == 'place_user') {
     $data = json_decode(file_get_contents("php://input"));
 
-    // Inputs: target_user_id (pending user), parent_id (new parent), position (L/R)
-    if (!isset($data->target_user_id) || !isset($data->parent_id) || !isset($data->position)) {
+    // Inputs: target_user_id (pending user), parent_code (new parent Code), position (L/R)
+    if (!isset($data->target_user_id) || !isset($data->position) || (!isset($data->parent_id) && !isset($data->parent_code))) {
         echo json_encode(["message" => "Missing data", "code" => 400]);
         exit;
     }
 
     $pending_uid = $data->target_user_id;
-    $new_parent_id = $data->parent_id;
     $pos = $data->position;
+
+    // Resolve Parent ID
+    $new_parent_id = 0;
+    if (isset($data->parent_code)) {
+        $stmt = $db->prepare("SELECT id FROM users WHERE invite_code = ?");
+        $stmt->execute([$data->parent_code]);
+        $p = $stmt->fetch();
+        if (!$p) {
+            echo json_encode(["message" => "Parent UID not found", "code" => 400]);
+            exit;
+        }
+        $new_parent_id = $p['id'];
+    } elseif (isset($data->parent_id)) {
+        $new_parent_id = $data->parent_id;
+    }
 
     if ($pos !== 'L' && $pos !== 'R') {
         echo json_encode(["message" => "Invalid position", "code" => 400]);
@@ -65,11 +79,9 @@ if ($action == 'pending_list') {
             throw new Exception("You are not the sponsor of this user");
         }
 
-        // 2. Verify Target Parent: exists
-        $stmt = $db->prepare("SELECT id FROM users WHERE id = ?");
-        $stmt->execute([$new_parent_id]);
-        if ($stmt->rowCount() == 0) {
-            throw new Exception("Target parent node not found");
+        // 2. Verify Target Parent: exists (Redundant check if looked up above, but safe)
+        if ($new_parent_id <= 0) {
+            throw new Exception("Invalid Parent Target");
         }
 
         // 3. Security Check: Target Parent MUST be in my team (can trace up to me) or IS ME

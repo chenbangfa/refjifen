@@ -16,8 +16,8 @@
                             <text class="tag" v-if="item.is_sub_account == 1">子</text>
                             <text class="tag master" v-else>主</text>
                         </view>
-                        <view class="acc-detail">ID: {{ item.id }} | 手机: {{ maskMobile(item.mobile) }}</view>
-                        <view class="acc-detail" v-if="item.invite_code">邀请码: {{ item.invite_code }}</view> 
+                        <view class="acc-detail" v-if="item.invite_code">UID: {{ item.invite_code }}</view> 
+                        <view class="acc-detail">手机: {{ maskMobile(item.mobile) }}</view>
                         <!-- Note: invite_code might not be returned strictly as a field unless aliased to id, 
                              usually ID is the invite code in this system. -->
                     </view>

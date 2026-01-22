@@ -25,7 +25,7 @@
                 <scroll-view scroll-y class="modal-body list-body">
                     <view class="pending-item" v-for="item in pendingList" :key="item.id" @click="openPlaceForm(item)">
                         <view class="p-row">
-                            <text class="p-name">{{ item.nickname || '未命名' }} (ID: {{item.id}})</text>
+                            <text class="p-name">{{ item.nickname || '未命名' }} (UID: {{item.invite_code}})</text>
                             <text class="p-btn">安置</text>
                         </view>
                         <view class="p-info">手机: {{ item.mobile }}</view>
@@ -44,11 +44,11 @@
                 <view class="modal-header">安置用户</view>
                 <view class="modal-body">
                     <view class="form-uinfo">
-                        正在安置: <text style="color:#1890ff;font-weight:bold;">{{ currentPending.nickname }} (ID: {{ currentPending.id }})</text>
+                        正在安置: <text style="color:#1890ff;font-weight:bold;">{{ currentPending.nickname }} (UID: {{ currentPending.invite_code }})</text>
                     </view>
                     
-                    <view class="form-label">上级ID (Parent ID)</view>
-                    <input class="form-input" type="number" v-model="placeForm.parentId" placeholder="请输入要放置的上级ID" />
+                    <view class="form-label">上级UID (Parent UID)</view>
+                    <input class="form-input" type="text" v-model="placeForm.parentId" placeholder="请输入要放置的上级邀请码" />
                     
                     <view class="form-label">放置区域 (Position)</view>
                     <radio-group class="form-radio-group" @change="placeForm.position = $event.detail.value">
@@ -142,13 +142,13 @@
                 this.showPendingModal = false; 
             },
             async submitPlacement() {
-                if(!this.placeForm.parentId) return uni.showToast({ title: '请输入上级ID', icon: 'none' });
+                if(!this.placeForm.parentId) return uni.showToast({ title: '请输入上级UID', icon: 'none' });
                 
                 uni.showLoading({ title: '处理中' });
                 try {
                     const res = await uni.$api('team.php?action=place_user', 'POST', {
                         target_user_id: this.currentPending.id,
-                        parent_id: this.placeForm.parentId,
+                        parent_code: this.placeForm.parentId,
                         position: this.placeForm.position
                     });
                     uni.hideLoading();
